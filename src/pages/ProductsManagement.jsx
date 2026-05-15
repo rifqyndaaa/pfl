@@ -199,8 +199,8 @@ export default function ProductsManagement() {
   return (
     <div className="bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen p-6 space-y-6">
       
-      {/* HEADER */}
-      <div className="bg-gradient-to-r from-violet-500 to-purple-600 rounded-3xl shadow-2xl p-8">
+      {/* HEADER - Warna Biru */}
+      <div className="bg-gradient-to-r from-blue-500 to-cyan-600 rounded-3xl shadow-2xl p-8">
 
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
 
@@ -215,7 +215,7 @@ export default function ProductsManagement() {
                 BUIQ Products
               </h1>
 
-              <p className="text-violet-100 text-sm mt-1">
+              <p className="text-blue-100 text-sm mt-1">
                 Dashboard / Products
               </p>
             </div>
@@ -238,7 +238,7 @@ export default function ProductsManagement() {
 
             <button
               onClick={() => setShowModal(true)}
-              className="bg-white text-violet-600 px-5 py-2 rounded-xl font-bold flex items-center gap-2"
+              className="bg-white text-blue-600 px-5 py-2 rounded-xl font-bold flex items-center gap-2"
             >
               <FaPlus />
               Add Product
@@ -319,7 +319,7 @@ export default function ProductsManagement() {
         ))}
       </div>
 
-      {/* FILTER */}
+      {/* FILTER - Warna Biru */}
       <div className="flex gap-2 flex-wrap">
 
         {[
@@ -337,7 +337,7 @@ export default function ProductsManagement() {
             }
             className={`px-4 py-2 rounded-xl font-bold text-sm transition-all ${
               selectedCategory === category
-                ? "bg-violet-500 text-white"
+                ? "bg-blue-500 text-white"
                 : "bg-white text-gray-600"
             }`}
           >
@@ -386,7 +386,7 @@ export default function ProductsManagement() {
               {filteredProducts.map((product) => (
                 <tr
                   key={product.productId}
-                  className="hover:bg-violet-50 transition-all"
+                  className="hover:bg-blue-50 transition-all"
                 >
 
                   <td className="p-4">
@@ -455,12 +455,12 @@ export default function ProductsManagement() {
 
                   <td className="p-4 font-bold text-gray-700">
                     {product.stock} pcs
-                  </td>
+                   </td>
 
-                  <td className="p-4 font-bold text-violet-600">
+                  <td className="p-4 font-bold text-blue-600">
                     Rp{" "}
                     {product.price.toLocaleString()}
-                  </td>
+                   </td>
                 </tr>
               ))}
             </tbody>
@@ -472,7 +472,7 @@ export default function ProductsManagement() {
 
           <div className="flex items-center gap-2 text-sm text-gray-500">
 
-            <FaBoxOpen className="text-violet-500" />
+            <FaBoxOpen className="text-blue-500" />
 
             <span>
               Showing {filteredProducts.length} of{" "}
@@ -482,22 +482,22 @@ export default function ProductsManagement() {
         </div>
       </div>
 
-      {/* SUMMARY */}
+      {/* SUMMARY - Warna Biru */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        <div className="bg-gradient-to-r from-violet-50 to-purple-50 rounded-2xl p-6 border border-violet-100">
+        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl p-6 border border-blue-100">
 
           <div className="flex items-center justify-between mb-4">
 
             <div className="flex items-center gap-2">
-              <FaTags className="text-violet-500 text-xl" />
+              <FaTags className="text-blue-500 text-xl" />
 
               <h3 className="font-bold text-gray-800">
                 Product Overview
               </h3>
             </div>
 
-            <FaEye className="text-violet-400" />
+            <FaEye className="text-blue-400" />
           </div>
 
           <div className="space-y-4">
@@ -562,6 +562,101 @@ export default function ProductsManagement() {
           </div>
         </div>
       </div>
+
+      {/* MODAL ADD PRODUCT - Warna Biru */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <FaPlus className="text-blue-500" />
+              Add New Product
+            </h2>
+
+            <div className="space-y-4">
+              <input
+                type="text"
+                placeholder="Product Name"
+                className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500"
+                value={formData.productName}
+                onChange={(e) =>
+                  setFormData({ ...formData, productName: e.target.value })
+                }
+              />
+
+              <select
+                className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500"
+                value={formData.category}
+                onChange={(e) =>
+                  setFormData({ ...formData, category: e.target.value })
+                }
+              >
+                <option>Dress</option>
+                <option>Shoes</option>
+                <option>Bag</option>
+                <option>Accessories</option>
+                <option>Outer</option>
+              </select>
+
+              <select
+                className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500"
+                value={formData.status}
+                onChange={(e) =>
+                  setFormData({ ...formData, status: e.target.value })
+                }
+              >
+                <option>Available</option>
+                <option>Low Stock</option>
+                <option>Out of Stock</option>
+              </select>
+
+              <input
+                type="number"
+                placeholder="Stock"
+                className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500"
+                value={formData.stock}
+                onChange={(e) =>
+                  setFormData({ ...formData, stock: e.target.value })
+                }
+              />
+
+              <input
+                type="number"
+                placeholder="Price"
+                className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500"
+                value={formData.price}
+                onChange={(e) =>
+                  setFormData({ ...formData, price: e.target.value })
+                }
+              />
+
+              <input
+                type="text"
+                placeholder="Image URL (optional)"
+                className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500"
+                value={formData.imageUrl}
+                onChange={(e) =>
+                  setFormData({ ...formData, imageUrl: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowModal(false)}
+                className="flex-1 py-3 rounded-xl border border-gray-200 font-bold text-gray-600"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddProduct}
+                className="flex-1 py-3 rounded-xl bg-blue-500 text-white font-bold"
+              >
+                Add Product
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -201,8 +201,8 @@ export default function OrdersManagement() {
   return (
     <div className="bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen p-6 space-y-6">
       
-      {/* HEADER */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-emerald-500 to-green-600 rounded-3xl shadow-2xl p-8">
+      {/* HEADER - Warna Biru */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-blue-500 to-cyan-600 rounded-3xl shadow-2xl p-8">
 
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
 
@@ -216,7 +216,7 @@ export default function OrdersManagement() {
                 BUIQ Orders Management
               </h1>
 
-              <p className="text-emerald-100 text-sm mt-1">
+              <p className="text-blue-100 text-sm mt-1">
                 Dashboard / Orders
               </p>
             </div>
@@ -238,7 +238,7 @@ export default function OrdersManagement() {
 
             <button
               onClick={() => setShowModal(true)}
-              className="bg-white text-emerald-600 px-5 py-2 rounded-xl font-bold flex items-center gap-2"
+              className="bg-white text-blue-600 px-5 py-2 rounded-xl font-bold flex items-center gap-2"
             >
               <FaPlus />
               Add Order
@@ -319,7 +319,7 @@ export default function OrdersManagement() {
         ))}
       </div>
 
-      {/* FILTER */}
+      {/* FILTER - Warna Biru */}
       <div className="flex gap-2 flex-wrap">
         {[
           "All",
@@ -334,7 +334,7 @@ export default function OrdersManagement() {
             }
             className={`px-4 py-2 rounded-xl font-bold text-sm transition-all ${
               selectedStatus === status
-                ? "bg-emerald-500 text-white"
+                ? "bg-blue-500 text-white"
                 : "bg-white text-gray-600"
             }`}
           >
@@ -383,14 +383,14 @@ export default function OrdersManagement() {
               {filteredOrders.map((order) => (
                 <tr
                   key={order.orderId}
-                  className="hover:bg-emerald-50 transition-all"
+                  className="hover:bg-blue-50 transition-all"
                 >
 
                   <td className="p-4">
                     <span className="bg-gray-100 px-3 py-1 rounded-xl font-bold">
                       #{order.orderId}
                     </span>
-                  </td>
+                   </td>
 
                   <td className="p-4">
                     <div className="flex items-center gap-3">
@@ -411,11 +411,11 @@ export default function OrdersManagement() {
                         </div>
                       </div>
                     </div>
-                  </td>
+                   </td>
 
                   <td className="p-4 font-medium text-gray-700">
                     {order.product}
-                  </td>
+                   </td>
 
                   <td className="p-4">
                     <div className="flex items-center gap-2">
@@ -448,12 +448,12 @@ export default function OrdersManagement() {
                         {order.status}
                       </span>
                     </div>
-                  </td>
+                   </td>
 
-                  <td className="p-4 font-bold text-emerald-600">
+                  <td className="p-4 font-bold text-blue-600">
                     Rp{" "}
                     {order.totalPrice.toLocaleString()}
-                  </td>
+                   </td>
 
                   <td className="p-4">
                     <div className="flex items-center gap-2 text-gray-500">
@@ -461,18 +461,18 @@ export default function OrdersManagement() {
 
                       {order.orderDate}
                     </div>
-                  </td>
-                </tr>
+                   </td>
+                 </tr>
               ))}
             </tbody>
-          </table>
+           </table>
         </div>
 
         {/* FOOTER */}
         <div className="border-t border-gray-100 p-4 bg-gray-50 flex justify-between items-center">
 
           <div className="flex items-center gap-2 text-sm text-gray-500">
-            <FaTruck className="text-emerald-500" />
+            <FaTruck className="text-blue-500" />
 
             <span>
               Showing {filteredOrders.length} of{" "}
@@ -482,10 +482,10 @@ export default function OrdersManagement() {
         </div>
       </div>
 
-      {/* SUMMARY */}
+      {/* SUMMARY - Warna Biru */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100">
+        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl p-6 border border-blue-100">
 
           <div className="flex items-center justify-between mb-4">
 
@@ -563,13 +563,13 @@ export default function OrdersManagement() {
         </div>
       </div>
 
-      {/* MODAL */}
+      {/* MODAL - Warna Biru */}
       {showModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
 
           <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
 
-            <div className="bg-gradient-to-r from-emerald-500 to-green-600 p-6 text-white">
+            <div className="bg-gradient-to-r from-blue-500 to-cyan-600 p-6 text-white">
 
               <div className="flex items-center gap-3">
 
@@ -582,7 +582,7 @@ export default function OrdersManagement() {
                     New Order
                   </h2>
 
-                  <p className="text-emerald-100 text-sm">
+                  <p className="text-blue-100 text-sm">
                     Tambahkan order baru
                   </p>
                 </div>
@@ -594,7 +594,7 @@ export default function OrdersManagement() {
               <input
                 type="text"
                 placeholder="Customer Name"
-                className="w-full border border-gray-200 p-3 rounded-xl outline-none"
+                className="w-full border border-gray-200 p-3 rounded-xl outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 value={formData.customerName}
                 onChange={(e) =>
                   setFormData({
@@ -608,7 +608,7 @@ export default function OrdersManagement() {
               <input
                 type="text"
                 placeholder="Product Name"
-                className="w-full border border-gray-200 p-3 rounded-xl outline-none"
+                className="w-full border border-gray-200 p-3 rounded-xl outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 value={formData.product}
                 onChange={(e) =>
                   setFormData({
@@ -619,7 +619,7 @@ export default function OrdersManagement() {
               />
 
               <select
-                className="w-full border border-gray-200 p-3 rounded-xl outline-none"
+                className="w-full border border-gray-200 p-3 rounded-xl outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 value={formData.status}
                 onChange={(e) =>
                   setFormData({
@@ -636,7 +636,7 @@ export default function OrdersManagement() {
               <input
                 type="number"
                 placeholder="Total Price"
-                className="w-full border border-gray-200 p-3 rounded-xl outline-none"
+                className="w-full border border-gray-200 p-3 rounded-xl outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 value={formData.totalPrice}
                 onChange={(e) =>
                   setFormData({
@@ -649,7 +649,7 @@ export default function OrdersManagement() {
 
               <input
                 type="date"
-                className="w-full border border-gray-200 p-3 rounded-xl outline-none"
+                className="w-full border border-gray-200 p-3 rounded-xl outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 value={formData.orderDate}
                 onChange={(e) =>
                   setFormData({
@@ -664,7 +664,7 @@ export default function OrdersManagement() {
 
                 <button
                   onClick={handleAddOrder}
-                  className="flex-1 bg-gradient-to-r from-emerald-500 to-green-600 text-white py-3 rounded-xl font-bold"
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-600 text-white py-3 rounded-xl font-bold hover:from-blue-600 hover:to-cyan-700 transition-all"
                 >
                   Confirm Order
                 </button>
@@ -673,7 +673,7 @@ export default function OrdersManagement() {
                   onClick={() =>
                     setShowModal(false)
                   }
-                  className="px-6 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold"
+                  className="px-6 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold hover:bg-gray-200 transition-all"
                 >
                   Cancel
                 </button>

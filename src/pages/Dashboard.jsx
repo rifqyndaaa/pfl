@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { 
   FaTractor, FaChartLine, FaArrowRight, FaMapMarkerAlt, 
   FaComments, FaShoppingCart, FaLeaf, FaAppleAlt, 
-  FaBox, FaTruck, FaCalendarAlt, FaUsers, FaMedal 
+  FaBox, FaTruck, FaCalendarAlt, FaUsers, FaMedal,
+  FaStore, FaTshirt, FaTags, FaGlasses, FaGem, FaRegClock
 } from "react-icons/fa";
 
-export default function OrangeFarmDashboard() {
+export default function ButiqDashboard() {
     const [selected, setSelected] = useState(null);
     const [isVisible, setIsVisible] = useState(false);
 
@@ -13,19 +14,19 @@ export default function OrangeFarmDashboard() {
         setIsVisible(true);
     }, []);
 
-    // Data untuk Orange Farm
+    // Data untuk Butiq (Butik/Fashion Retail)
     const customers = [
-        { name: "Chris Friedly", company: "Supermarket Värnövä", avatar: "CF", revenue: "$45.2K" },
+        { name: "Chris Friedly", company: "Fashion Värnövä", avatar: "CF", revenue: "$45.2K" },
         { name: "Maggie Johnson", company: "Coole Organic Inc.", avatar: "MJ", revenue: "$128.5K" },
-        { name: "Gael Harry", company: "New York Finest Fruits", avatar: "GH", revenue: "$67.8K" },
-        { name: "Jenna Sullivan", company: "Walnut", avatar: "JS", revenue: "$32.1K" },
+        { name: "Gael Harry", company: "New York Finest Styles", avatar: "GH", revenue: "$67.8K" },
+        { name: "Jenna Sullivan", company: "Walnut Boutique", avatar: "JS", revenue: "$32.1K" },
     ];
 
     const deals = [
-        { name: "Fruit2Go", progress: 75, amount: "$45K", status: "active" },
+        { name: "Style2Go", progress: 75, amount: "$45K", status: "active" },
         { name: "Marshall's MKT", progress: 60, amount: "$32K", status: "active" },
         { name: "CCNT", progress: 45, amount: "$28K", status: "pending" },
-        { name: "Joanna Mini-market", progress: 30, amount: "$18K", status: "pending" },
+        { name: "Joanna Mini-boutique", progress: 30, amount: "$18K", status: "pending" },
     ];
 
     const topStates = [
@@ -34,19 +35,19 @@ export default function OrangeFarmDashboard() {
         { state: "New Hampshire", amount: "70K", growth: "+8%" },
     ];
 
-    const harvestData = [
-        { month: "Jan", harvest: 45 },
-        { month: "Feb", harvest: 52 },
-        { month: "Mar", harvest: 48 },
-        { month: "Apr", harvest: 70 },
-        { month: "May", harvest: 85 },
-        { month: "Jun", harvest: 92 },
-        { month: "Jul", harvest: 88 },
-        { month: "Aug", harvest: 95 },
-        { month: "Sep", harvest: 102 },
-        { month: "Oct", harvest: 110 },
-        { month: "Nov", harvest: 125 },
-        { month: "Dec", harvest: 140 },
+    const salesData = [
+        { month: "Jan", sales: 45 },
+        { month: "Feb", sales: 52 },
+        { month: "Mar", sales: 48 },
+        { month: "Apr", sales: 70 },
+        { month: "May", sales: 85 },
+        { month: "Jun", sales: 92 },
+        { month: "Jul", sales: 88 },
+        { month: "Aug", sales: 95 },
+        { month: "Sep", sales: 102 },
+        { month: "Oct", sales: 110 },
+        { month: "Nov", sales: 125 },
+        { month: "Dec", sales: 140 },
     ];
 
     return (
@@ -73,32 +74,32 @@ export default function OrangeFarmDashboard() {
                 `}
             </style>
 
-            {/* Header - Orange Farm */}
+            {/* Header - Butiq */}
             <div className="glass-card p-6 rounded-2xl shadow-xl mb-8 animate-float overflow-hidden relative">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-blue-100 rounded-full -mr-20 -mt-20 opacity-50"></div>
-                <div className="absolute bottom-0 left-0 w-32 h-32 bg-orange-100 rounded-full -ml-16 -mb-16 opacity-30"></div>
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-cyan-100 rounded-full -ml-16 -mb-16 opacity-30"></div>
                 
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
                     <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
-                            <FaTractor className="text-white text-2xl" />
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
+                            <FaStore className="text-white text-2xl" />
                         </div>
                         <div>
                             <h1 className="text-2xl font-black text-slate-800">
-                                Orange Farm <span className="text-blue-500">🍊</span>
+                                Butiq <span className="text-blue-500">👗</span>
                             </h1>
-                            <p className="text-slate-500 text-sm">Manage your farm operations, deals, and harvest analytics</p>
+                            <p className="text-slate-500 text-sm">Manage your boutique operations, deals, and sales analytics</p>
                         </div>
                     </div>
                     
                     <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2 bg-white/80 px-4 py-2 rounded-full shadow-sm">
                             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                            <span className="text-xs font-bold text-slate-600">Farm Status: Active</span>
+                            <span className="text-xs font-bold text-slate-600">Store Status: Active</span>
                         </div>
-                        <div className="flex items-center gap-2 bg-orange-50 px-4 py-2 rounded-full">
-                            <FaAppleAlt className="text-orange-500 text-sm" />
-                            <span className="text-xs font-bold text-orange-600">Harvest Season</span>
+                        <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-full">
+                            <FaTshirt className="text-blue-500 text-sm" />
+                            <span className="text-xs font-bold text-blue-600">Sale Season</span>
                         </div>
                     </div>
                 </div>
@@ -129,15 +130,15 @@ export default function OrangeFarmDashboard() {
                             </div>
                         </div>
 
-                        {/* Total Harvest */}
-                        <div className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all border-l-4 border-orange-500">
+                        {/* Total Sales */}
+                        <div className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all border-l-4 border-cyan-500">
                             <div className="flex justify-between items-start mb-3">
                                 <div>
-                                    <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Total Harvest</p>
-                                    <h3 className="text-2xl font-black text-slate-800">24.5K kg</h3>
+                                    <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Total Sales</p>
+                                    <h3 className="text-2xl font-black text-slate-800">24.5K items</h3>
                                 </div>
-                                <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
-                                    <FaLeaf className="text-orange-500" />
+                                <div className="w-10 h-10 rounded-xl bg-cyan-100 flex items-center justify-center">
+                                    <FaTags className="text-cyan-500" />
                                 </div>
                             </div>
                             <div className="flex items-center justify-between">
@@ -147,14 +148,14 @@ export default function OrangeFarmDashboard() {
                         </div>
 
                         {/* Active Deals */}
-                        <div className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all border-l-4 border-emerald-500">
+                        <div className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all border-l-4 border-indigo-500">
                             <div className="flex justify-between items-start mb-3">
                                 <div>
                                     <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Active Deals</p>
                                     <h3 className="text-2xl font-black text-slate-800">18</h3>
                                 </div>
-                                <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-                                    <FaShoppingCart className="text-emerald-500" />
+                                <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
+                                    <FaShoppingCart className="text-indigo-500" />
                                 </div>
                             </div>
                             <div className="flex items-center justify-between">
@@ -164,24 +165,24 @@ export default function OrangeFarmDashboard() {
                         </div>
                     </div>
 
-                    {/* Harvest Growth Chart */}
+                    {/* Sales Growth Chart */}
                     <div className="bg-white rounded-2xl p-5 shadow-sm">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-bold text-slate-700">Harvest Growth</h3>
+                            <h3 className="font-bold text-slate-700">Sales Growth</h3>
                             <div className="flex gap-4 text-xs">
-                                <span className="text-blue-500 font-bold">📈 Peak: Dec (140K kg)</span>
-                                <span className="text-orange-500 font-bold">🏆 Top Buyer: Maggie Johnson</span>
+                                <span className="text-blue-500 font-bold">📈 Peak: Dec (140K items)</span>
+                                <span className="text-cyan-500 font-bold">🏆 Top Buyer: Maggie Johnson</span>
                             </div>
                         </div>
                         <div className="h-48 flex items-end gap-1">
-                            {harvestData.map((data, idx) => (
+                            {salesData.map((data, idx) => (
                                 <div key={idx} className="flex-1 flex flex-col items-center gap-1 group">
                                     <div 
                                         className="w-full bg-gradient-to-t from-blue-400 to-blue-500 rounded-t-lg hover:from-blue-500 hover:to-blue-600 transition-all cursor-pointer relative"
-                                        style={{ height: `${(data.harvest / 150) * 100}%`, minHeight: '4px' }}
+                                        style={{ height: `${(data.sales / 150) * 100}%`, minHeight: '4px' }}
                                     >
                                         <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                            {data.harvest} kg
+                                            {data.sales} items
                                         </div>
                                     </div>
                                     <span className="text-[10px] text-slate-400 font-medium">{data.month}</span>
@@ -189,8 +190,8 @@ export default function OrangeFarmDashboard() {
                             ))}
                         </div>
                         <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between text-xs text-slate-500">
-                            <span>📊 Total harvest 2024: 1,052,000 kg</span>
-                            <span>🎯 Target 2025: 1,250,000 kg (+18.8%)</span>
+                            <span>📊 Total sales 2024: 1,052,000 items</span>
+                            <span>🎯 Target 2025: 1,250,000 items (+18.8%)</span>
                         </div>
                     </div>
 
@@ -204,9 +205,9 @@ export default function OrangeFarmDashboard() {
                             <div className="bg-gradient-to-r from-blue-400 to-blue-500 h-full rounded-full transition-all duration-1000" style={{ width: '84%' }}></div>
                         </div>
                         <div className="flex justify-between mt-2 text-xs text-slate-400">
-                            <span>Target: 300,000 kg</span>
-                            <span>Achieved: 252,000 kg</span>
-                            <span>Remaining: 48,000 kg</span>
+                            <span>Target: 300,000 items</span>
+                            <span>Achieved: 252,000 items</span>
+                            <span>Remaining: 48,000 items</span>
                         </div>
                     </div>
 
@@ -221,7 +222,7 @@ export default function OrangeFarmDashboard() {
                         <div className="space-y-3">
                             {customers.map((cust, idx) => (
                                 <div key={idx} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all cursor-pointer group">
-                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-500 flex items-center justify-center text-white font-bold text-sm">
+                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
                                         {cust.avatar}
                                     </div>
                                     <div className="flex-1">
@@ -315,7 +316,7 @@ export default function OrangeFarmDashboard() {
                         </div>
                         <div className="space-y-3">
                             {[
-                                { name: "Alice Wong", message: "When will the oranges arrive?", time: "5m", unread: true, avatar: "AW" },
+                                { name: "Alice Wong", message: "When will the new collection arrive?", time: "5m", unread: true, avatar: "AW" },
                                 { name: "Mark Davis", message: "Thanks for the samples!", time: "12m", unread: true, avatar: "MD" },
                                 { name: "Sarah Lee", message: "Can we get a discount?", time: "1h", unread: false, avatar: "SL" },
                                 { name: "John Cooper", message: "Order confirmed", time: "2h", unread: false, avatar: "JC" },
@@ -345,7 +346,7 @@ export default function OrangeFarmDashboard() {
                     </div>
 
                     {/* Quick Actions & Info */}
-                    <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-5 text-white shadow-lg">
+                    <div className="bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl p-5 text-white shadow-lg">
                         <div className="flex items-center gap-3 mb-4">
                             <FaTruck className="text-2xl opacity-80" />
                             <div>
@@ -354,9 +355,9 @@ export default function OrangeFarmDashboard() {
                             </div>
                         </div>
                         <div className="flex items-center gap-3 mb-4">
-                            <FaCalendarAlt className="text-xl opacity-80" />
+                            <FaRegClock className="text-xl opacity-80" />
                             <div>
-                                <p className="text-xs opacity-80">Harvest season ends</p>
+                                <p className="text-xs opacity-80">Sale season ends</p>
                                 <p className="text-sm font-bold">December 31, 2024</p>
                             </div>
                         </div>
@@ -364,13 +365,13 @@ export default function OrangeFarmDashboard() {
                             <div className="flex justify-between items-center">
                                 <div className="flex items-center gap-2">
                                     <FaUsers className="opacity-80" />
-                                    <span className="text-xs opacity-80">Active farmers</span>
+                                    <span className="text-xs opacity-80">Active staff</span>
                                 </div>
                                 <span className="font-bold">24</span>
                             </div>
                             <div className="flex justify-between items-center mt-2">
                                 <div className="flex items-center gap-2">
-                                    <FaMedal className="opacity-80" />
+                                    <FaGem className="opacity-80" />
                                     <span className="text-xs opacity-80">Quality rating</span>
                                 </div>
                                 <span className="font-bold">A+</span>
@@ -383,9 +384,9 @@ export default function OrangeFarmDashboard() {
                         <h3 className="font-bold text-slate-700 mb-3">Today's Deliveries</h3>
                         <div className="space-y-2">
                             {[
-                                { customer: "Whole Foods Market", qty: "450 kg", time: "09:00 AM" },
-                                { customer: "FreshDirect", qty: "320 kg", time: "10:30 AM" },
-                                { customer: "Local Grocery Co", qty: "280 kg", time: "01:00 PM" },
+                                { customer: "Fashion Outlet NYC", qty: "450 items", time: "09:00 AM" },
+                                { customer: "StyleDirect", qty: "320 items", time: "10:30 AM" },
+                                { customer: "Local Boutique Co", qty: "280 items", time: "01:00 PM" },
                             ].map((delivery, idx) => (
                                 <div key={idx} className="flex justify-between items-center p-2 rounded-lg hover:bg-slate-50">
                                     <div>
@@ -405,7 +406,7 @@ export default function OrangeFarmDashboard() {
                 <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
                     <div className="bg-white p-8 rounded-3xl w-full max-w-sm text-center shadow-2xl animate-slide">
                         <div className="w-20 h-20 bg-blue-100 text-blue-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-6">
-                            🍊
+                            👗
                         </div>
                         <h2 className="text-2xl font-black text-slate-800 mb-2">{selected}</h2>
                         <p className="text-slate-500 mb-8">View detailed information for {selected}</p>

@@ -5,8 +5,8 @@ import { ImSpinner2 } from "react-icons/im"
 import { useNavigate } from "react-router-dom"
 
 export default function Login() {
-    /* navigate, state & handleChange*/
     const navigate = useNavigate()
+
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState("")
     const [dataForm, setDataForm] = useState({
@@ -14,20 +14,19 @@ export default function Login() {
         password: "",
     })
 
-    const handleChange = (evt) => {
-        const { name, value } = evt.target
-        setDataForm({
-            ...dataForm,
+    const handleChange = (e) => {
+        const { name, value } = e.target
+        setDataForm((prev) => ({
+            ...prev,
             [name]: value,
-        });
-    };
+        }))
+    }
 
-    /* process form */
     const handleSubmit = async (e) => {
         e.preventDefault()
 
         setLoading(true)
-        setError(false)
+        setError("")
 
         axios
             .post("https://dummyjson.com/user/login", {
@@ -35,85 +34,98 @@ export default function Login() {
                 password: dataForm.password,
             })
             .then((response) => {
-                // Jika status bukan 200, tampilkan pesan error
-                if (response.status !== 200) {
-                    setError(response.data.message);
-                    return;
+                if (response.status === 200) {
+                    navigate("/")
+                } else {
+                    setError(response.data.message || "Login gagal")
                 }
-
-                // Redirect ke dashboard jika login sukses
-                navigate("/");
             })
             .catch((err) => {
-                if (err.response) {
-                    setError(err.response.data.message || "An error occurred");
-                } else {
-                    setError(err.message || "An unknown error occurred");
-                }
+                setError(
+                    err?.response?.data?.message ||
+                    err.message ||
+                    "Terjadi kesalahan"
+                )
             })
             .finally(() => {
-                setLoading(false);
-            });
-    };
-    /* error & loading status */
-    const errorInfo = error ? (
-        <div className="bg-red-200 mb-5 p-5 text-sm font-light text-gray-600 rounded flex items-center">
-            <BsFillExclamationDiamondFill className="text-red-600 me-2 text-lg" />
-            {error}
-        </div>
-    ) : null
-
-    const loadingInfo = loading ? (
-        <div className="bg-gray-200 mb-5 p-5 text-sm rounded flex items-center">
-            <ImSpinner2 className="me-2 animate-spin" />
-            Mohon Tunggu...
-        </div>
-    ) : null;
+                setLoading(false)
+            })
+    }
 
     return (
-        <div>
-            <h2 className="text-2xl font-semibold text-gray-700 mb-6 text-center">
-                Welcome Back 👋
-            </h2>
-            {errorInfo}
+        <div className="w-full">
 
-            {loadingInfo}
-            <form onSubmit={handleSubmit}>
-                <div className="mb-5">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Email Address
+            {/* TITLE */}
+            <h2 className="text-2xl font-semibold text-center text-blue-600 mb-6">
+                Login BUIQ
+            </h2>
+
+            {/* ERROR */}
+            {error && (
+                <div className="bg-red-50 border border-red-200 mb-5 p-3 text-sm text-red-600 rounded-lg flex items-center">
+                    <BsFillExclamationDiamondFill className="text-red-500 mr-2 text-lg" />
+                    {error}
+                </div>
+            )}
+
+            {/* LOADING */}
+            {loading && (
+                <div className="bg-blue-50 border border-blue-200 mb-5 p-3 text-sm rounded-lg flex items-center text-blue-600">
+                    <ImSpinner2 className="mr-2 animate-spin" />
+                    Mohon Tunggu BUIQ...
+                </div>
+            )}
+
+            {/* FORM */}
+            <form onSubmit={handleSubmit} className="space-y-5">
+
+                {/* EMAIL */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">
+                        Email BUIQ
                     </label>
                     <input
                         name="email"
                         onChange={handleChange}
                         type="text"
-                        id="email"
-                        className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm
-                            placeholder-gray-400"
                         placeholder="you@example.com"
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl
+                        focus:outline-none focus:ring-2 focus:ring-blue-400"
                     />
                 </div>
-                <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Password
+
+                {/* PASSWORD */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">
+                        Password BUIQ
                     </label>
                     <input
                         name="password"
                         onChange={handleChange}
                         type="password"
-                        id="password"
-                        className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm
-                            placeholder-gray-400"
                         placeholder="********"
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl
+                        focus:outline-none focus:ring-2 focus:ring-blue-400"
                     />
                 </div>
+
+                {/* BUTTON */}
                 <button
                     type="submit"
-                    className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4
-                        rounded-lg transition duration-300"
+                    disabled={loading}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold
+                    py-3 rounded-xl flex items-center justify-center transition"
                 >
-                    Login
+                    {loading ? (
+                        <>
+                            <ImSpinner2 className="animate-spin mr-2" />
+                            Loading...
+                        </>
+                    ) : (
+                        "Login BUIQ"
+                    )}
                 </button>
+
             </form>
         </div>
     )
