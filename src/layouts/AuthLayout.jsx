@@ -2,25 +2,25 @@ import { Outlet } from "react-router-dom"
 
 export default function AuthLayout() {
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-white">
+        <div className="min-h-screen bg-[#f5f5f5] flex items-center justify-center px-4">
+            <div className="w-full max-w-6xl bg-white min-h-[700px] flex shadow-sm">
 
-            <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-blue-100">
+                {/* LEFT SIDE */}
+                <div className="hidden md:flex flex-1 bg-[#f7f7f7]"></div>
 
-                {/* BRAND */}
-                <div className="flex items-center justify-center mb-6">
-                    <h1 className="text-4xl font-extrabold text-blue-600 tracking-wide">
-                        BUIQ
-                    </h1>
+                {/* RIGHT SIDE */}
+                <div className="w-full md:w-[520px] px-10 py-14 flex flex-col justify-between">
+
+                    <div>
+                        {/* LOGO */}
+                        <h1 className="text-4xl font-bold text-blue-600 mb-20">
+                        </h1>
+
+                        {/* CONTENT */}
+                        <Outlet />
+                    </div>
+
                 </div>
-
-                {/* CHILD ROUTE */}
-                <Outlet />
-
-                {/* FOOTER */}
-                <p className="text-center text-sm text-gray-400 mt-6">
-                    © {new Date().getFullYear()} BUIQ - Business System. All rights reserved.
-                </p>
-
             </div>
         </div>
     )

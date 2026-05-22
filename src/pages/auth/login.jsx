@@ -1,14 +1,14 @@
 import axios from "axios"
 import { useState } from "react"
-import { BsFillExclamationDiamondFill } from "react-icons/bs"
-import { ImSpinner2 } from "react-icons/im"
 import { useNavigate } from "react-router-dom"
+import { ImSpinner2 } from "react-icons/im"
 
 export default function Login() {
     const navigate = useNavigate()
 
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState("")
+
     const [dataForm, setDataForm] = useState({
         email: "",
         password: "",
@@ -16,6 +16,7 @@ export default function Login() {
 
     const handleChange = (e) => {
         const { name, value } = e.target
+
         setDataForm((prev) => ({
             ...prev,
             [name]: value,
@@ -36,15 +37,12 @@ export default function Login() {
             .then((response) => {
                 if (response.status === 200) {
                     navigate("/")
-                } else {
-                    setError(response.data.message || "Login gagal")
                 }
             })
             .catch((err) => {
                 setError(
                     err?.response?.data?.message ||
-                    err.message ||
-                    "Terjadi kesalahan"
+                    "Login gagal"
                 )
             })
             .finally(() => {
@@ -53,78 +51,128 @@ export default function Login() {
     }
 
     return (
-        <div className="w-full">
+        <div>
+
+            {/* LOGO */}
+            <h1 className="text-5xl font-bold text-blue-600 mb-20">
+                BUTIQ
+            </h1>
 
             {/* TITLE */}
-            <h2 className="text-2xl font-semibold text-center text-blue-600 mb-6">
-                Login BUIQ
-            </h2>
+            <h1 className="text-[48px] leading-tight font-bold text-blue-600 mb-6">
+                Smart Fashion Management For Modern Boutique Business
+            </h1>
+
+            {/* SUBTITLE */}
+            <p className="text-gray-500 mb-10 text-lg">
+                Welcome back! Please login to your BUTIQ account.
+            </p>
 
             {/* ERROR */}
             {error && (
-                <div className="bg-red-50 border border-red-200 mb-5 p-3 text-sm text-red-600 rounded-lg flex items-center">
-                    <BsFillExclamationDiamondFill className="text-red-500 mr-2 text-lg" />
+                <div className="mb-5 bg-red-50 border border-red-200 text-red-500 p-3 text-sm">
                     {error}
                 </div>
             )}
 
-            {/* LOADING */}
-            {loading && (
-                <div className="bg-blue-50 border border-blue-200 mb-5 p-3 text-sm rounded-lg flex items-center text-blue-600">
-                    <ImSpinner2 className="mr-2 animate-spin" />
-                    Mohon Tunggu BUIQ...
-                </div>
-            )}
-
             {/* FORM */}
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit}>
 
                 {/* EMAIL */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">
-                        Email BUIQ
-                    </label>
+                <div className="border border-gray-300 border-b-0">
                     <input
+                        type="text"
                         name="email"
                         onChange={handleChange}
-                        type="text"
-                        placeholder="you@example.com"
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl
-                        focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        placeholder="Email Address"
+                        className="w-full px-5 py-4 outline-none"
                     />
                 </div>
 
                 {/* PASSWORD */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">
-                        Password BUIQ
-                    </label>
+                <div className="border border-gray-300">
                     <input
+                        type="password"
                         name="password"
                         onChange={handleChange}
-                        type="password"
-                        placeholder="********"
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl
-                        focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        placeholder="Password"
+                        className="w-full px-5 py-4 outline-none"
                     />
                 </div>
 
+                {/* OPTIONS */}
+                <div className="flex items-center justify-between mt-5 mb-10 text-gray-500 text-sm">
+
+                    <label className="flex items-center gap-2">
+                        <input type="checkbox" />
+                        Remember Me
+                    </label>
+
+                    <button
+                        type="button"
+                        className="hover:text-blue-600 transition"
+                    >
+                        Forgot Password?
+                    </button>
+
+                </div>
+
                 {/* BUTTON */}
-                <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold
-                    py-3 rounded-xl flex items-center justify-center transition"
-                >
-                    {loading ? (
-                        <>
-                            <ImSpinner2 className="animate-spin mr-2" />
-                            Loading...
-                        </>
-                    ) : (
-                        "Login BUIQ"
-                    )}
-                </button>
+                <div className="flex gap-5 mb-16">
+
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 transition"
+                    >
+                        {loading ? (
+                            <span className="flex items-center">
+                                <ImSpinner2 className="animate-spin mr-2" />
+                                Loading...
+                            </span>
+                        ) : (
+                            "Login"
+                        )}
+                    </button>
+
+                    <button
+                        type="button"
+                        className="border border-blue-500 text-blue-600 px-10 py-4 hover:bg-blue-50 transition"
+                    >
+                        Sign Up
+                    </button>
+
+                </div>
+
+                {/* SOCIAL LOGIN */}
+                <div className="flex items-center justify-between text-sm">
+
+                    <span className="text-gray-500">
+                        Or login with
+                    </span>
+
+                    <button
+                        type="button"
+                        className="text-blue-600 font-semibold"
+                    >
+                        Facebook
+                    </button>
+
+                    <button
+                        type="button"
+                        className="text-blue-600 font-semibold"
+                    >
+                        LinkedIn
+                    </button>
+
+                    <button
+                        type="button"
+                        className="text-blue-600 font-semibold"
+                    >
+                        Google
+                    </button>
+
+                </div>
 
             </form>
         </div>

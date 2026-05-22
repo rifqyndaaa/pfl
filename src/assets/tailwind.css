@@ -11,15 +11,38 @@
 }
 
 :root {
-    --color-latar: #f3f4f6;
-    --color-teks: #374151; 
-    --color-teks-samping: #6b7280;
-    --color-garis: #e5e7eb; 
-    --color-hijau: #00B074; 
-    --color-merah: #ef4444; 
-    --color-biru: #3b82f6;
-    --color-kuning: #f59e0b; 
+     /* Primary */
+  --color-primary: #3b82f6;
+
+  /* Success */
+  --color-success: #22c55e;
+  --color-success-dark: #16a34a;
+  --color-success-darker: #15803d;
+
+  /* Danger */
+  --color-danger: #ef4444;
+  --color-danger-dark: #dc2626;
+
+  /* Warning */
+  --color-warning: #f59e0b;
+  --color-warning-dark: #92400e;
+
+  /* Background */
+  --color-bg: #f1f5f9;
+  --color-card: #ffffff;
+
+  /* Text */
+  --color-text: #1e293b;
+  --color-text-muted: #64748b;
+  --color-text-soft: #94a3b8;
+
+  /* Border */
+  --color-border: #e2e8f0;
+  --color-border-soft: #f1f5f9;
+
 
     --font-playfair: 'playfair', sans-serif;
     --font-roboto: 'roboto', sans-serif;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    
 }
