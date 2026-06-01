@@ -8,6 +8,7 @@ import {
   MdErrorOutline,
   MdWarning,
   MdLogout,
+  MdWidgets,
 } from "react-icons/md";
 
 const menuItems = [
@@ -37,6 +38,12 @@ const menuItems = [
         icon: MdInventory,
         label: "Customer Management",
         path: "/customer-management",
+      },
+
+      {
+        icon: MdWidgets,
+        label: "Components",
+        path: "/components",
       },
     ],
   },

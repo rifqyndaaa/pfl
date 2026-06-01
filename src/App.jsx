@@ -18,6 +18,10 @@ const ProductsManagement = React.lazy(() =>
   import("./pages/ProductsManagement")
 );
 
+const Components = React.lazy(() =>
+  import("./pages/Components")
+);
+
 const Login = React.lazy(() => import("./pages/auth/login"));
 const Register = React.lazy(() => import("./pages/auth/Register"));
 const Forgot = React.lazy(() => import("./pages/auth/Forgot"));
@@ -73,6 +77,11 @@ function App() {
           <Route
             path="/products-management"
             element={<ProductsManagement />}
+          />
+  
+          <Route
+            path="/components"
+            element={<Components />}
           />
 
           <Route
