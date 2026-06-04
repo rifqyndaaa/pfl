@@ -118,7 +118,7 @@ export default function Header() {
 
           <div className="flex items-center gap-3 pl-4 border-l border-slate-100 group cursor-pointer">
             <div className="hidden xl:block text-right leading-none">
-              <p className="text-xs font-black text-slate-800">Rifqi Aldi</p>
+              <p className="text-xs font-black text-slate-800">Rifqi yanda</p>
               <p className="text-[9px] font-bold text-blue-500 uppercase tracking-tighter">Administrator</p>
             </div>
             <div className="relative">

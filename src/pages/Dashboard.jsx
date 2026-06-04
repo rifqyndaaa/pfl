@@ -18,11 +18,6 @@ const ILamp   = () => <Ico d={["M9 18h6","M12 2l-4 8h8l-4-8z","M12 10v8"]} />;
 const IBall   = () => <Ico d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z M2.1 12h19.8 M12 2c-4 6-4 14 0 20 M12 2c4 6 4 14 0 20" />;
 const IFile   = () => <Ico d={["M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z","M14 2v6h6"]} />;
 const ITrend  = () => <Ico d="M23 6l-9.5 9.5-5-5L1 18 M17 6h6v6" />;
-const IGift   = () => <Ico d={["M20 12v10H4V12","M22 7H2v5h20V7z","M12 22V7","M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z","M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"]} />;
-const IBell   = () => <Ico d={["M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9","M13.73 21a2 2 0 0 1-3.46 0"]} />;
-const IMsg    = () => <Ico d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />;
-const ICog    = () => <Ico d={["M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z","M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"]} />;
-const ISearch = () => <Ico d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />;
 
 // ─── Chart.js loader hook ──────────────────────────────────────────────────────
 function useChart(ref, buildConfig, deps = []) {
@@ -158,46 +153,6 @@ const tabStyle = (active) => ({
   color: active ? "#1d4ed8" : "#64748b",
 });
 
-// ─── Header ────────────────────────────────────────────────────────────────────
-function Header() {
-  return (
-    <header style={{
-      height: 56, background: "#fff", borderBottom: "1px solid #e8eaf0",
-      display: "flex", alignItems: "center", padding: "0 20px", gap: 12,
-    }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginRight: "auto" }}>
-        <span style={{ fontWeight: 900, fontSize: 18, color: "#1e293b", letterSpacing: "-0.5px" }}>BUIQ</span>
-        <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#3b82f6", marginTop: 2 }} />
-        <p style={{ fontSize: 9, color: "#94a3b8", fontWeight: 600, letterSpacing: 1, textTransform: "uppercase", marginLeft: 8 }}>
-          Welcome back, chief!
-        </p>
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f1f5f9", borderRadius: 8, padding: "6px 12px", width: 220 }}>
-        <span style={{ color: "#94a3b8", display: "flex" }}><ISearch /></span>
-        <span style={{ fontSize: 13, color: "#94a3b8" }}>Quick search...</span>
-        <span style={{ marginLeft: "auto", fontSize: 10, color: "#94a3b8", background: "#e2e8f0", padding: "1px 5px", borderRadius: 4 }}>ESC</span>
-      </div>
-      {[<IGift />, <IMsg />, <IBell />, <ICog />].map((ic, i) => (
-        <div key={i} style={{ width: 34, height: 34, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", cursor: "pointer" }}>
-          {ic}
-        </div>
-      ))}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: 4 }}>
-        <div style={{ textAlign: "right" }}>
-          <p style={{ fontSize: 12, fontWeight: 700, color: "#1e293b", lineHeight: 1.2 }}>Rifqi Aldi</p>
-          <p style={{ fontSize: 10, color: "#94a3b8", lineHeight: 1 }}>ADMINISTRATOR</p>
-        </div>
-        <div style={{
-          width: 34, height: 34, borderRadius: "50%",
-          background: "linear-gradient(135deg,#f59e0b,#ef4444)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          color: "#fff", fontWeight: 700, fontSize: 13, border: "2px solid #3b82f6",
-        }}>RA</div>
-      </div>
-    </header>
-  );
-}
-
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function AnalyticsDashboard() {
   const [isVisible, setIsVisible] = useState(false);
@@ -256,8 +211,6 @@ export default function AnalyticsDashboard() {
       display: "flex", flexDirection: "column",
       opacity: isVisible ? 1 : 0, transition: "opacity .5s",
     }}>
-      <Header />
-
       <main style={{ flex: 1, overflow: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
 
         {/* ── ROW 1: Greeting + 3 mini stat cards ── */}
