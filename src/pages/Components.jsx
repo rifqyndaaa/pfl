@@ -8,6 +8,28 @@ import ActivityTimeline from "../components/ActivityTimeline";
 import OrdersTable from "../components/OrdersTable";
 import TransactionTable from "../components/TransactionTable";
 
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+
 export default function Components() {
   return (
     <div className="bg-gray-50 min-h-screen p-6 space-y-6">
@@ -74,6 +96,74 @@ export default function Components() {
 
       <Section label="Transaction table">
         <TransactionTable />
+      </Section>
+
+      {/* Shadcn UI Components */}
+      <Section label="Shadcn UI Components">
+
+        <div className="bg-white border border-gray-100 rounded-xl p-5">
+          <Tabs defaultValue="dashboard">
+            <TabsList>
+              <TabsTrigger value="dashboard">
+                Dashboard
+              </TabsTrigger>
+
+              <TabsTrigger value="report">
+                Report
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="dashboard">
+              <p className="mt-3 text-sm">
+                Dashboard CRM sedang aktif.
+              </p>
+            </TabsContent>
+
+            <TabsContent value="report">
+              <p className="mt-3 text-sm">
+                Data laporan penjualan.
+              </p>
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        <div className="bg-white border border-gray-100 rounded-xl p-5 mt-5">
+          <Accordion type="single" collapsible>
+            <AccordionItem value="item-1">
+              <AccordionTrigger>
+                Informasi CRM
+              </AccordionTrigger>
+
+              <AccordionContent>
+                Sistem CRM digunakan untuk mengelola customer dan transaksi.
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </div>
+
+        <div className="bg-white border border-gray-100 rounded-xl p-5 mt-5">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button>
+                Buka Dialog
+              </Button>
+            </DialogTrigger>
+
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>
+                  Shadcn UI
+                </DialogTitle>
+              </DialogHeader>
+
+              <p>
+                Implementasi Dialog berhasil ditambahkan ke project CRM.
+              </p>
+
+            </DialogContent>
+          </Dialog>
+        </div>
+
       </Section>
 
     </div>
