@@ -1,5 +1,5 @@
 const transactions = [
-  { date: "01 Jun", desc: "Order #001 – Laptop Pro",    method: "Transfer", type: "income",  methodStyle: "bg-blue-50 text-blue-700 border-blue-100",   amount: "+Rp 12,5jt", amountStyle: "text-emerald-600" },
+  { date: "01 Jun", desc: "Order #001 – Laptop Pro",    method: "Transfer", type: "income",  methodStyle: "bg-primary-light text-primary border-primary/20",   amount: "+Rp 12,5jt", amountStyle: "text-emerald-600" },
   { date: "01 Jun", desc: "Refund #004 – Monitor",     method: "Refund",   type: "expense", methodStyle: "bg-rose-50 text-rose-700 border-rose-100",     amount: "-Rp 4,2jt",  amountStyle: "text-rose-600" },
   { date: "31 Mei", desc: "Order #003 – Keyboard Mech", method: "QRIS",     type: "income",  methodStyle: "bg-emerald-50 text-emerald-700 border-emerald-100", amount: "+Rp 780rb",  amountStyle: "text-emerald-600" },
   { date: "30 Mei", desc: "Order #002 – Mouse Wireless",method: "COD",      type: "pending", methodStyle: "bg-amber-50 text-amber-700 border-amber-100", amount: "Rp 350rb",   amountStyle: "text-gray-500" },

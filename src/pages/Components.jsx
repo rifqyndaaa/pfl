@@ -32,31 +32,31 @@ import {
 
 export default function Components() {
   return (
-    <div className="bg-gray-50 min-h-screen p-6 space-y-6">
+    <div className="space-y-6">
 
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
         <div>
-          <h1 className="text-base font-medium text-gray-900">BUIQ components</h1>
-          <p className="text-xs text-gray-400 mt-0.5">Playground · semua komponen</p>
+          <h1 className="text-sm font-bold text-slate-800 tracking-tight">BUIQ Components Playground</h1>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Semua komponen UI terdokumentasi di sini</p>
         </div>
         <div className="flex gap-2">
-          <Button>
-            <i className="ti ti-plus text-sm" /> Tambah
+          <Button type="primary">
+            <i className="ti ti-plus text-xs" /> Tambah
           </Button>
           <Button type="success">
-            <i className="ti ti-download text-sm" /> Export
+            <i className="ti ti-download text-xs" /> Export
           </Button>
         </div>
       </div>
 
       {/* Basic Components */}
       <Section label="Basic components">
-        <div className="bg-white border border-gray-100 rounded-xl p-5 space-y-4">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4">
           <div className="flex gap-2 flex-wrap">
-            <Button><i className="ti ti-device-floppy text-sm" /> Simpan</Button>
-            <Button type="success"><i className="ti ti-check text-sm" /> Success</Button>
-            <Button type="danger"><i className="ti ti-x text-sm" /> Danger</Button>
+            <Button type="primary"><i className="ti ti-device-floppy text-xs" /> Simpan</Button>
+            <Button type="success"><i className="ti ti-check text-xs" /> Success</Button>
+            <Button type="danger"><i className="ti ti-x text-xs" /> Danger</Button>
           </div>
           <div className="flex gap-2 flex-wrap">
             <Badge type="success"><i className="ti ti-circle-check text-xs" /> Aktif</Badge>
@@ -101,7 +101,7 @@ export default function Components() {
       {/* Shadcn UI Components */}
       <Section label="Shadcn UI Components">
 
-        <div className="bg-white border border-gray-100 rounded-xl p-5">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm">
           <Tabs defaultValue="dashboard">
             <TabsList>
               <TabsTrigger value="dashboard">
@@ -127,7 +127,7 @@ export default function Components() {
           </Tabs>
         </div>
 
-        <div className="bg-white border border-gray-100 rounded-xl p-5 mt-5">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 mt-4 shadow-sm">
           <Accordion type="single" collapsible>
             <AccordionItem value="item-1">
               <AccordionTrigger>
@@ -141,10 +141,10 @@ export default function Components() {
           </Accordion>
         </div>
 
-        <div className="bg-white border border-gray-100 rounded-xl p-5 mt-5">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 mt-4 shadow-sm">
           <Dialog>
             <DialogTrigger asChild>
-              <Button>
+              <Button type="primary">
                 Buka Dialog
               </Button>
             </DialogTrigger>
@@ -156,7 +156,7 @@ export default function Components() {
                 </DialogTitle>
               </DialogHeader>
 
-              <p>
+              <p className="text-xs text-slate-500">
                 Implementasi Dialog berhasil ditambahkan ke project CRM.
               </p>
 

@@ -1,39 +1,43 @@
-export default function Forgot() {
-    return (
-        <div>
-            <h2 className="text-2xl font-semibold text-gray-700 mb-2 text-center">
-                Forgot Your Password?
-            </h2>
-            
-            <p className="text-sm text-gray-500 mb-6 text-center">
-                Enter your email address and we'll send you a link to reset your
-                password.
-            </p>
+import { Link } from "react-router-dom";
 
-            <form>
-                <div className="mb-5">
-                    <label
-                        htmlFor="email"
-                        className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                        Email Address
-                    </label>
-                    <input
-                        type="email"
-                        id="email"
-                        className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm
-                            placeholder-gray-400"
-                        placeholder="you@example.com"
-                    />
-                </div>
-                <button
-                    type="submit"
-                    className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4
-                        rounded-lg transition duration-300"
-                >
-                    Send Reset Link
-                </button>
-            </form>
+export default function Forgot() {
+  return (
+    <div className="space-y-6">
+      {/* Title */}
+      <div>
+        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Lupa Password?</h1>
+        <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">
+          Masukkan alamat email Anda, dan kami akan mengirimkan tautan untuk menyetel ulang password Anda.
+        </p>
+      </div>
+
+      <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+        {/* Email Field */}
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Email Address</label>
+          <input
+            type="email"
+            placeholder="you@example.com"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary text-xs outline-none transition-all placeholder:text-slate-400"
+            required
+          />
         </div>
-    )
+
+        {/* Submit button */}
+        <button
+          type="submit"
+          className="w-full bg-primary hover:bg-primary-hover text-white text-xs font-bold py-2.5 rounded-xl flex items-center justify-center shadow-sm transition-all cursor-pointer mt-2"
+        >
+          Kirim Tautan Reset
+        </button>
+      </form>
+
+      {/* Footer link */}
+      <div className="text-center text-xs text-slate-500 font-semibold pt-2">
+        <Link to="/login" className="text-primary hover:underline">
+          Kembali ke Halaman Login
+        </Link>
+      </div>
+    </div>
+  );
 }

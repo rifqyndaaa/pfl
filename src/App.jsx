@@ -1,5 +1,5 @@
 import React, { Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 
 import MainLayout from "./layouts/MainLayout";
 import AuthLayout from "./layouts/AuthLayout";
@@ -22,7 +22,29 @@ const Components = React.lazy(() =>
   import("./pages/Components")
 );
 
+const About = React.lazy(() =>
+  import("./pages/About")
+);
+
+const MemberManagement = React.lazy(() =>
+  import("./pages/MemberManagement")
+);
+
+const MemberDetail = React.lazy(() =>
+  import("./pages/MemberDetail")
+);
+
 const Login = React.lazy(() => import("./pages/auth/login"));
+const LandingPage = React.lazy(() => import("./pages/LandingPage"));
+
+// ROOT RESOLVER
+const RootResolver = () => {
+  const token = localStorage.getItem("buiq_token");
+  if (token) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return <LandingPage />;
+};
 const Register = React.lazy(() => import("./pages/auth/Register"));
 const Forgot = React.lazy(() => import("./pages/auth/Forgot"));
 
@@ -64,10 +86,13 @@ function App() {
     <Suspense fallback={<Loading />}>
       <Routes>
 
+        {/* PUBLIC ROOT ROUTE */}
+        <Route path="/" element={<LandingPage />} />
+
         {/* MAIN LAYOUT */}
         <Route element={<MainLayout />}>
 
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/dashboard" element={<Dashboard />} />
 
           <Route
             path="/orders"
@@ -87,6 +112,21 @@ function App() {
           <Route
             path="/customer-management"
             element={<CustomerManagement />}
+          />
+
+          <Route
+            path="/about"
+            element={<About />}
+          />
+
+          <Route
+            path="/member-management"
+            element={<MemberManagement />}
+          />
+
+          <Route
+            path="/member-management/:id"
+            element={<MemberDetail />}
           />
 
           {/* ERROR PAGES */}

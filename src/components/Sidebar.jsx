@@ -1,5 +1,5 @@
-import { NavLink } from "react-router-dom";
-
+import { useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   MdDashboard,
   MdStore,
@@ -9,182 +9,167 @@ import {
   MdWarning,
   MdLogout,
   MdWidgets,
+  MdInfo,
+  MdCardMembership,
 } from "react-icons/md";
 
 const menuItems = [
   {
     group: "MAIN MENU",
-
     items: [
-      {
-        icon: MdDashboard,
-        label: "Dashboard",
-        path: "/",
-      },
-
-      {
-        icon: MdStore,
-        label: "Orders",
-        path: "/orders",
-      },
-
-      {
-        icon: MdShoppingBag,
-        label: "Products",
-        path: "/products-management",
-      },
-
-      {
-        icon: MdInventory,
-        label: "Customer Management",
-        path: "/customer-management",
-      },
-
-      {
-        icon: MdWidgets,
-        label: "Components",
-        path: "/components",
-      },
+      { icon: MdDashboard, label: "Dashboard", path: "/dashboard" },
+      { icon: MdStore, label: "Orders", path: "/orders" },
+      { icon: MdShoppingBag, label: "Products", path: "/products-management" },
+      { icon: MdInventory, label: "Customer Management", path: "/customer-management" },
     ],
   },
-
   {
-    group: "ERROR PAGES",
-
+    group: "BUSINESS",
     items: [
-      {
-        icon: MdErrorOutline,
-        label: "Error 400",
-        path: "/error-400",
-      },
-
-      {
-        icon: MdWarning,
-        label: "Error 401",
-        path: "/error-401",
-      },
-
-      {
-        icon: MdErrorOutline,
-        label: "Error 403",
-        path: "/error-403",
-      },
+      { icon: MdCardMembership, label: "Member Management", path: "/member-management" },
+      { icon: MdInfo, label: "About BUIQ", path: "/about" },
+    ],
+  },
+  {
+    group: "INFORMATION",
+    items: [
+      { icon: MdWidgets, label: "Components", path: "/components" },
+    ],
+  },
+  {
+    group: "SYSTEM",
+    items: [
+      { icon: MdErrorOutline, label: "Error 400", path: "/error-400" },
+      { icon: MdWarning, label: "Error 401", path: "/error-401" },
+      { icon: MdErrorOutline, label: "Error 403", path: "/error-403" },
     ],
   },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ isCollapsed, isMobile, setMobileOpen }) {
+  const navigate = useNavigate();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  const handleLogout = () => {
+    localStorage.removeItem("buiq_token");
+    localStorage.removeItem("buiq_user");
+    sessionStorage.clear();
+    setShowLogoutModal(false);
+    navigate("/");
+  };
 
   const menuClass = ({ isActive }) =>
-    `group flex items-center gap-3 px-4 py-3 rounded-2xl mb-1 text-[13px] font-semibold transition-all duration-300 ${
+    `group flex items-center gap-2.5 px-3 py-2.5 rounded-xl mb-0.5 text-xs font-bold transition-all duration-200 border-l-[3px] active:scale-[0.98] ${
       isActive
-        ? "bg-blue-500 text-white shadow-lg shadow-blue-200 translate-x-2"
-        : "text-gray-500 hover:bg-gray-50 hover:text-blue-600"
-    }`;
+        ? "bg-primary-light text-primary border-primary shadow-sm shadow-primary/5"
+        : "text-slate-600 hover:bg-slate-50/70 hover:text-slate-950 border-transparent"
+    } ${isCollapsed ? "justify-center px-0 border-l-0" : ""}`;
 
   return (
-    <aside className="flex flex-col h-screen w-[260px] bg-white border-r border-gray-100 flex-shrink-0 z-20 sticky top-0">
-
-      {/* Logo */}
-      <div className="px-8 py-10">
-
-        <div className="flex items-center gap-1">
-
-          <div className="w-2 h-8 bg-blue-500 rounded-full"></div>
-
-          <div className="flex items-baseline ml-2">
-
-            <span className="text-3xl font-black text-gray-800 italic">
-              BUIQ
-            </span>
-
-            <span className="text-4xl font-black text-blue-500">
-              .
-            </span>
-
+    <>
+      <aside className={`flex flex-col h-screen bg-white border-r border-slate-200/80 shrink-0 z-20 transition-all duration-300 ${
+        isCollapsed ? "w-[80px]" : "w-[260px]"
+      }`}>
+        {/* Branding Section */}
+        <div className={`px-5 py-6 border-b border-slate-100 mb-4 flex items-center ${
+          isCollapsed ? "justify-center" : "gap-3"
+        }`}>
+          <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center text-white font-black text-lg shrink-0 shadow-md shadow-primary/20">
+            B
           </div>
+          {!isCollapsed && (
+            <div>
+              <div className="flex items-baseline">
+                <span className="text-base font-black text-slate-800 tracking-tight">BUIQ</span>
+                <span className="text-lg font-black text-primary">.</span>
+              </div>
+              <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">
+                Lifestyle Platform
+              </p>
+            </div>
+          )}
         </div>
 
-        <p className="text-[10px] text-gray-400 mt-1 font-bold uppercase tracking-[0.2em] ml-3">
-          PREMIUM PLATFORM
-        </p>
-      </div>
+        {/* Navigation Menu */}
+        <nav className="flex-1 px-3 overflow-y-auto space-y-4">
+          {menuItems.map((section, idx) => (
+            <div key={section.group}>
+              {idx > 0 && <div className="my-3 border-t border-slate-100" />}
+              {!isCollapsed ? (
+                <p className="text-[9px] font-bold text-slate-400/80 px-3 mb-2 tracking-[0.15em] uppercase">
+                  {section.group}
+                </p>
+              ) : (
+                <div className="h-2" />
+              )}
+              <div className="space-y-1">
+                {section.items.map(({ icon: Icon, label, path }) => (
+                  <NavLink
+                    key={label}
+                    to={path}
+                    className={menuClass}
+                    onClick={() => isMobile && setMobileOpen(false)}
+                    title={isCollapsed ? label : undefined}
+                  >
+                    <Icon className={`text-base shrink-0 transition-transform group-hover:scale-105 ${isCollapsed ? "text-lg" : ""}`} />
+                    {!isCollapsed && <span>{label}</span>}
+                  </NavLink>
+                ))}
+              </div>
+            </div>
+          ))}
+        </nav>
 
-      {/* Menu */}
-      <nav className="flex-1 px-4 overflow-y-auto">
+        {/* Logout Footer Section */}
+        <div className={`px-3 pb-6 border-t border-slate-100 pt-4 flex flex-col ${
+          isCollapsed ? "items-center" : ""
+        }`}>
+          <button 
+            onClick={() => setShowLogoutModal(true)}
+            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-rose-50/60 hover:text-rose-600 transition-all cursor-pointer ${
+              isCollapsed ? "justify-center w-10 h-10 px-0" : "w-full"
+            }`}
+            title={isCollapsed ? "Logout" : undefined}
+          >
+            <MdLogout className="text-base shrink-0" />
+            {!isCollapsed && <span className="text-xs font-semibold">Logout</span>}
+          </button>
+          {!isCollapsed && (
+            <p className="text-[8px] text-slate-400 font-bold text-center mt-4 tracking-widest uppercase">
+              BUIQ v.1.0.0
+              </p>
+          )}
+        </div>
+      </aside>
 
-        {menuItems.map((section) => (
-          <div key={section.group} className="mb-6">
-
-            <p className="text-[10px] font-black text-gray-300 px-4 mb-3 tracking-[0.15em]">
-              {section.group}
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-200/80 text-center animate-slide">
+            <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-rose-500">
+              <MdLogout size={24} />
+            </div>
+            <h3 className="text-sm font-bold text-slate-800 mb-2">Logout Account</h3>
+            <p className="text-slate-400 text-[10px] leading-relaxed mb-6">
+              Are you sure you want to logout from your account?
             </p>
-
-            {section.items.map(({ icon: Icon, label, path }) => (
-
-              <NavLink
-                key={label}
-                to={path}
-                className={menuClass}
+            <div className="flex gap-3 justify-center">
+              <button 
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-500 bg-white hover:bg-slate-50 transition-all cursor-pointer"
               >
-
-                <div className="p-1.5 rounded-lg">
-                  <Icon className="text-[18px]" />
-                </div>
-
-                <span>{label}</span>
-
-              </NavLink>
-            ))}
-          </div>
-        ))}
-      </nav>
-
-      {/* Footer */}
-      <div className="px-4 pb-6">
-
-        <div className="relative overflow-hidden rounded-[2rem] p-5 bg-slate-900">
-
-          <div className="relative z-10 text-center">
-
-            <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
-              <span className="text-xl">✨</span>
+                Cancel
+              </button>
+              <button 
+                onClick={handleLogout}
+                className="flex-1 px-4 py-2 rounded-xl text-xs font-bold text-white bg-danger hover:bg-primary-hover transition-all cursor-pointer shadow-md shadow-danger/10"
+              >
+                Logout
+              </button>
             </div>
-
-            <p className="text-white font-bold text-xs mb-1">
-              Upgrade BUIQ Pro
-            </p>
-
-            <p className="text-white/50 text-[10px] leading-relaxed mb-4">
-              Get more features & analytics reports
-            </p>
-
-            <button className="w-full bg-blue-500 hover:bg-blue-400 text-white text-[11px] font-black py-2.5 rounded-xl transition-all">
-              Check Benefits
-            </button>
-
           </div>
         </div>
-
-        <div className="mt-6 px-4">
-
-          <div className="flex items-center gap-3 py-3 border-t border-gray-50 opacity-60 hover:opacity-100 transition-opacity cursor-pointer">
-
-            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
-              <MdLogout size={16} />
-            </div>
-
-            <span className="text-[12px] font-bold text-gray-600">
-              Logout
-            </span>
-
-          </div>
-
-          <p className="text-[9px] text-gray-300 font-medium text-center mt-2 tracking-widest uppercase">
-            BUIQ v.1.0.0
-          </p>
-        </div>
-      </div>
-    </aside>
+      )}
+    </>
   );
 }

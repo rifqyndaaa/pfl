@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { Link } from "react-router-dom";
 
 // ─── Inline SVG Icons ──────────────────────────────────────────────────────────
 const Ico = ({ d, size = 16 }) => (
@@ -7,17 +8,140 @@ const Ico = ({ d, size = 16 }) => (
     {Array.isArray(d) ? d.map((p, i) => <path key={i} d={p} />) : <path d={d} />}
   </svg>
 );
-const ISend   = () => <Ico d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" />;
 const IWallet = () => <Ico d={["M21 7H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z","M16 3l-4 4-4-4"]} />;
-const IRefund = () => <Ico d="M1 4v6h6M23 20v-6h-6M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" />;
 const ICard   = () => <Ico d={["M21 4H3a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z","M1 10h22"]} />;
-const ICoffee = () => <Ico d={["M18 8h1a4 4 0 0 1 0 8h-1","M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z","M6 1v3M10 1v3M14 1v3"]} />;
-const IMobile = () => <Ico d={["M17 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z","M12 18h.01"]} />;
 const IShirt  = () => <Ico d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z" />;
 const ILamp   = () => <Ico d={["M9 18h6","M12 2l-4 8h8l-4-8z","M12 10v8"]} />;
 const IBall   = () => <Ico d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z M2.1 12h19.8 M12 2c-4 6-4 14 0 20 M12 2c4 6 4 14 0 20" />;
-const IFile   = () => <Ico d={["M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z","M14 2v6h6"]} />;
-const ITrend  = () => <Ico d="M23 6l-9.5 9.5-5-5L1 18 M17 6h6v6" />;
+
+// ─── Initial Fallback Data Generators ──────────────────────────────────────────
+const generateOrders = () => {
+  const statuses = ["Pending", "Completed", "Cancelled"];
+  const customers = [
+    { id: 1, name: "Alya Putri", avatar: "https://i.pravatar.cc/150?img=1", product: "Silk Midi Dress" },
+    { id: 2, name: "Rizky Pratama", avatar: "https://i.pravatar.cc/150?img=2", product: "Oversized Blazer" },
+    { id: 3, name: "Nadia Azzahra", avatar: "https://i.pravatar.cc/150?img=3", product: "Pleated Skirt" },
+    { id: 4, name: "Kevin Wijaya", avatar: "https://i.pravatar.cc/150?img=4", product: "Wide Leg Pants" },
+    { id: 5, name: "Salsa Nabila", avatar: "https://i.pravatar.cc/150?img=5", product: "Knit Sweater" },
+  ];
+  const orders = [];
+  for (let i = 1; i <= 30; i++) {
+    const cust = customers[i % customers.length];
+    orders.push({
+      orderId: i,
+      customerId: cust.id,
+      customerName: cust.name,
+      customerAvatar: cust.avatar,
+      product: cust.product,
+      status: statuses[i % 3],
+      totalPrice: Math.floor(150000 + Math.random() * 1500000),
+      orderDate: `2026-${String(Math.floor(1 + Math.random() * 12)).padStart(2, "0")}-${String(Math.floor(1 + Math.random() * 28)).padStart(2, "0")}`,
+    });
+  }
+  return orders;
+};
+
+const generateProducts = () => {
+  const categories = ["Dress", "Shoes", "Bag", "Accessories", "Outer"];
+  const statuses = ["Available", "Low Stock", "Out of Stock"];
+  const names = [
+    "Silk Dress", "Nike Sneakers", "Leather Bag", "Oversized Hoodie",
+    "Classic Watch", "Cargo Pants", "Denim Jacket", "Canvas Shoes"
+  ];
+  const images = [
+    "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=200",
+    "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=200",
+    "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=200",
+    "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=200",
+  ];
+  const products = [];
+  for (let i = 1; i <= 30; i++) {
+    const status = statuses[i % 3];
+    products.push({
+      productId: i,
+      productName: names[i % names.length],
+      category: categories[i % categories.length],
+      status: status,
+      stock: status === "Out of Stock" ? 0 : status === "Low Stock" ? Math.floor(2 + Math.random() * 8) : Math.floor(15 + Math.random() * 70),
+      price: Math.floor(100000 + Math.random() * 1500000),
+      image: images[i % images.length],
+      sku: `PRD-${String(i).padStart(4, "0")}`,
+    });
+  }
+  return products;
+};
+
+const generateCustomers = () => {
+  const names = [
+    "Alya Putri", "Rizky Pratama", "Nadia Azzahra", "Fajar Ramadhan",
+    "Citra Lestari", "Kevin Wijaya", "Dinda Maharani", "Raka Saputra",
+    "Salsa Nabila", "Andi Firmansyah",
+  ];
+  const statuses = ["Active", "VIP", "Inactive"];
+  const images = [
+    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
+    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop",
+    "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop",
+    "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop",
+    "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop",
+  ];
+  const customers = [];
+  for (let i = 1; i <= 30; i++) {
+    customers.push({
+      customerId: i,
+      customerName: names[i % names.length],
+      email: `customer${i}@gmail.com`,
+      status: statuses[i % 3],
+      totalOrders: Math.floor(1 + Math.random() * 50),
+      totalSpent: Math.floor(500000 + Math.random() * 10000000),
+      image: images[i % images.length],
+      customerCode: `CUST-${String(i).padStart(4, "0")}`,
+    });
+  }
+  return customers;
+};
+
+const generateMembers = () => {
+  const names = [
+    "Alya Putri", "Rizky Pratama", "Nadia Azzahra", "Fajar Ramadhan",
+    "Citra Lestari", "Kevin Wijaya", "Dinda Maharani", "Raka Saputra",
+    "Salsa Nabila", "Andi Firmansyah",
+    "Budi Santoso", "Siti Aminah", "Eko Prasetyo", "Dewi Lestari", "Rian Hidayat"
+  ];
+  const membershipTypes = ["Basic", "Silver", "Gold", "VIP"];
+  const statuses = ["Active", "Inactive", "Suspended"];
+  const images = [
+    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
+    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop",
+    "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop",
+    "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop",
+    "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop",
+  ];
+  const phonePrefixes = ["0812", "0813", "0821", "0857", "0878"];
+
+  const members = [];
+  for (let i = 1; i <= 15; i++) {
+    const name = names[i - 1];
+    const type = membershipTypes[i % 4];
+    const status = statuses[i % 3];
+    const monthStr = String(Math.floor(1 + ((i - 1) % 6))).padStart(2, "0");
+    const dayStr = String(1 + (i * 3) % 27).padStart(2, "0");
+    
+    members.push({
+      memberId: `MEM-${String(i).padStart(4, "0")}`,
+      fullName: name,
+      email: `${name.toLowerCase().replace(/\s+/g, "")}@gmail.com`,
+      phone: `${phonePrefixes[i % phonePrefixes.length]}-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(100 + Math.random() * 905)}`,
+      membershipType: type,
+      status: status,
+      joinDate: `2026-${monthStr}-${dayStr}`,
+      totalOrders: Math.floor(2 + (i * 3) % 15),
+      totalSpending: Math.floor(250000 + (i * 650000) % 6000000),
+      image: images[i % images.length]
+    });
+  }
+  return members;
+};
 
 // ─── Chart.js loader hook ──────────────────────────────────────────────────────
 function useChart(ref, buildConfig, deps = []) {
@@ -45,119 +169,146 @@ function Sparkline({ data, color, height = 50 }) {
     data: {
       labels: data.map((_, i) => i),
       datasets: [{ data, borderColor: color, borderWidth: 1.5, pointRadius: 0,
-        fill: "origin", backgroundColor: color + "30", tension: 0.4 }],
+        fill: "origin", backgroundColor: color + "15", tension: 0.4 }],
     },
     options: { responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false }, tooltip: { enabled: false } },
       scales: { x: { display: false }, y: { display: false } } },
-  }), []);
+  }), [data]);
   return <div style={{ position: "relative", height }}><canvas ref={ref} /></div>;
 }
 
-function DonutChart({ value, size = 80, cutout = "70%", color = "#3b82f6" }) {
+function CustomerStatusDonutChart({ active, vip, inactive }) {
   const ref = useRef(null);
   useChart(ref, () => ({
     type: "doughnut",
-    data: { datasets: [{ data: [value, 100 - value],
-      backgroundColor: [color, "#e0e7ff"], borderWidth: 0 }] },
-    options: { responsive: true, maintainAspectRatio: false, cutout,
-      plugins: { legend: { display: false }, tooltip: { enabled: false } } },
-  }), []);
-  return <div style={{ position: "relative", width: size, height: size }}><canvas ref={ref} /></div>;
+    data: {
+      labels: ["Active", "VIP", "Inactive"],
+      datasets: [{
+        data: [active, vip, inactive],
+        backgroundColor: ["#10B981", "#2B7FFF", "#94A3B8"],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: "70%",
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: true }
+      }
+    },
+  }), [active, vip, inactive]);
+  return <div style={{ position: "relative", width: 110, height: 110 }}><canvas ref={ref} /></div>;
 }
 
-function RevenueBarChart() {
+function RevenueBarChart({ monthlyData }) {
   const ref = useRef(null);
   useChart(ref, () => ({
     type: "bar",
     data: {
-      labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
+      labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
       datasets: [
-        { label: "2024", data: [65,72,58,80,75,90,85], backgroundColor: "#3b82f6", borderRadius: 4, barPercentage: 0.45 },
-        { label: "2023", data: [45,55,42,60,58,70,65], backgroundColor: "#bfdbfe", borderRadius: 4, barPercentage: 0.45 },
+        { label: "Revenue (Rp)", data: monthlyData, backgroundColor: "#2B7FFF", borderRadius: 4, barPercentage: 0.45 },
       ],
     },
     options: { responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
         x: { ticks: { color: "#94a3b8", font: { size: 10 } }, grid: { display: false }, border: { display: false } },
-        y: { ticks: { color: "#94a3b8", font: { size: 10 }, callback: v => v + "k" }, grid: { color: "#f1f5f9" }, border: { display: false } },
+        y: { ticks: { color: "#94a3b8", font: { size: 10 }, callback: v => "Rp " + Math.round(v/1000) + "k" }, grid: { color: "#f1f5f9" }, border: { display: false } },
       },
     },
-  }), []);
+  }), [monthlyData]);
   return <div style={{ position: "relative", height: 160 }}><canvas ref={ref} /></div>;
 }
 
-function IncomeAreaChart() {
+function MemberRegistrationTrendChart({ trendData }) {
   const ref = useRef(null);
   useChart(ref, () => ({
     type: "line",
     data: {
-      labels: ["Jan","Feb","Mar","Apr","May","Jun","Jul"],
-      datasets: [{
-        data: [30,55,38,65,42,70,60],
-        borderColor: "#3b82f6", borderWidth: 2, pointRadius: 0,
-        fill: "origin", backgroundColor: "#3b82f622", tension: 0.4,
-      }],
+      labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+      datasets: [
+        {
+          label: "Registrations",
+          data: trendData,
+          borderColor: "#2B7FFF",
+          backgroundColor: "rgba(43, 127, 255, 0.05)",
+          borderWidth: 2,
+          fill: true,
+          tension: 0.35,
+          pointBackgroundColor: "#2B7FFF",
+          pointBorderColor: "#fff",
+          pointBorderWidth: 1.5,
+          pointRadius: 3
+        }
+      ]
     },
-    options: { responsive: true, maintainAspectRatio: false,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
-        x: { ticks: { color: "#94a3b8", font: { size: 10 } }, grid: { display: false }, border: { display: false } },
-        y: { display: false },
-      },
-    },
-  }), []);
-  return <div style={{ position: "relative", height: 120 }}><canvas ref={ref} /></div>;
-}
-
-function RevMiniBar() {
-  const ref = useRef(null);
-  useChart(ref, () => ({
-    type: "bar",
-    data: {
-      labels: ["M","T","W","T","F","S"],
-      datasets: [{ data: [40,70,55,85,65,90],
-        backgroundColor: ["#bfdbfe","#bfdbfe","#bfdbfe","#bfdbfe","#3b82f6","#3b82f6"],
-        borderRadius: 3, barPercentage: 0.6 }],
-    },
-    options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { enabled: false } },
-      scales: {
         x: { ticks: { color: "#94a3b8", font: { size: 9 } }, grid: { display: false }, border: { display: false } },
-        y: { display: false },
-      },
-    },
-  }), []);
-  return <div style={{ position: "relative", height: 60 }}><canvas ref={ref} /></div>;
+        y: { ticks: { color: "#94a3b8", font: { size: 9 }, stepSize: 1 }, grid: { color: "#f1f5f9" }, border: { display: false } }
+      }
+    }
+  }), [trendData]);
+  return <div style={{ position: "relative", height: 160 }}><canvas ref={ref} /></div>;
 }
 
 // ─── Layout primitives ─────────────────────────────────────────────────────────
-const Card = ({ children, style = {} }) => (
-  <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e8eaf0", padding: 16, ...style }}>
+const Card = ({ children, className = "" }) => (
+  <div className={`bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm hover:shadow-md/5 transition-all ${className}`}>
     {children}
   </div>
 );
 
 const SectionTitle = ({ children, right }) => (
-  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-    <p style={{ fontSize: 13, fontWeight: 700, color: "#1e293b" }}>{children}</p>
+  <div className="flex justify-between items-center mb-4">
+    <p className="text-xs font-bold text-slate-800 tracking-wider uppercase">{children}</p>
     {right}
   </div>
 );
 
-const tabStyle = (active) => ({
-  fontSize: 12, padding: "5px 14px", borderRadius: 20, cursor: "pointer", fontWeight: 600,
-  border: active ? "none" : "1px solid #e2e8f0",
-  background: active ? "#eff6ff" : "transparent",
-  color: active ? "#1d4ed8" : "#64748b",
-});
-
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function AnalyticsDashboard() {
   const [isVisible, setIsVisible] = useState(false);
-  const [incomeTab, setIncomeTab] = useState("Income");
-  const [browserTab, setBrowserTab] = useState("Income");
+
+  // Initialize data sources from localStorage or dynamic generators fallback
+  const [orders, setOrders] = useState(() => {
+    const stored = localStorage.getItem("buiq_orders");
+    if (stored) return JSON.parse(stored);
+    const initial = generateOrders();
+    localStorage.setItem("buiq_orders", JSON.stringify(initial));
+    return initial;
+  });
+
+  const [products, setProducts] = useState(() => {
+    const stored = localStorage.getItem("buiq_products");
+    if (stored) return JSON.parse(stored);
+    const initial = generateProducts();
+    localStorage.setItem("buiq_products", JSON.stringify(initial));
+    return initial;
+  });
+
+  const [customers, setCustomers] = useState(() => {
+    const stored = localStorage.getItem("buiq_customers");
+    if (stored) return JSON.parse(stored);
+    const initial = generateCustomers();
+    localStorage.setItem("buiq_customers", JSON.stringify(initial));
+    return initial;
+  });
+
+  const [members, setMembers] = useState(() => {
+    const stored = localStorage.getItem("buiq_members");
+    if (stored) return JSON.parse(stored);
+    const initial = generateMembers();
+    localStorage.setItem("buiq_members", JSON.stringify(initial));
+    return initial;
+  });
 
   useEffect(() => {
     setIsVisible(true);
@@ -167,321 +318,442 @@ export default function AnalyticsDashboard() {
       s.async = true;
       document.head.appendChild(s);
     }
+
+    // Storage event listener to keep dashboard synced if orders/products change
+    const syncData = () => {
+      const storedOrders = localStorage.getItem("buiq_orders");
+      if (storedOrders) setOrders(JSON.parse(storedOrders));
+      const storedProducts = localStorage.getItem("buiq_products");
+      if (storedProducts) setProducts(JSON.parse(storedProducts));
+      const storedCustomers = localStorage.getItem("buiq_customers");
+      if (storedCustomers) setCustomers(JSON.parse(storedCustomers));
+      const storedMembers = localStorage.getItem("buiq_members");
+      if (storedMembers) setMembers(JSON.parse(storedMembers));
+    };
+
+    window.addEventListener("storage", syncData);
+    // Sync on focus (since SPA navigation changes component mounting)
+    syncData();
+
+    return () => window.removeEventListener("storage", syncData);
   }, []);
 
-  const transactions = [
-    { label: "Send money",   sub: "Wallet",      icon: <ISend />,   bg: "#eff6ff", tc: "#1d4ed8", val: "+82.8",   pos: true  },
-    { label: "Mac D",        sub: "Wallet",       icon: <IWallet />, bg: "#eff6ff", tc: "#1d4ed8", val: "+270.69", pos: true  },
-    { label: "Refund",       sub: "Balance",      icon: <IRefund />, bg: "#f0fdf4", tc: "#15803d", val: "+637.81", pos: true  },
-    { label: "Ordered Food", sub: "Credit Card",  icon: <ICard />,   bg: "#fff1f2", tc: "#be123c", val: "-938.71", pos: false },
-    { label: "Starbucks",    sub: "Wallet",       icon: <ICoffee />, bg: "#eff6ff", tc: "#1d4ed8", val: "+203.33", pos: true  },
-    { label: "Ordered Food", sub: "Mastercard",   icon: <ICard />,   bg: "#fff1f2", tc: "#be123c", val: "-92.45",  pos: false },
-  ];
+  // 1. Connect Dashboard statistics to existing Orders data
+  const ordersStats = useMemo(() => {
+    const total = orders.length;
+    const completed = orders.filter((o) => o.status === "Completed").length;
+    const pending = orders.filter((o) => o.status === "Pending").length;
+    const revenue = orders.reduce((sum, o) => sum + o.totalPrice, 0);
+    return { total, completed, pending, revenue };
+  }, [orders]);
 
-  const orderCategories = [
-    { label: "Electronic", sub: "Mobile, Earbuds, TV",   icon: <IMobile />, bg: "#eff6ff", tc: "#1d4ed8", val: "82.5k" },
-    { label: "Fashion",    sub: "T-shirt, Jeans, Shoes", icon: <IShirt />,  bg: "#f0fdf4", tc: "#15803d", val: "23.8k" },
-    { label: "Décor",      sub: "Fine Art, Dining",      icon: <ILamp />,   bg: "#fffbeb", tc: "#92400e", val: "849k"  },
-    { label: "Sports",     sub: "Football, Cricket Kit", icon: <IBall />,   bg: "#fff1f2", tc: "#be123c", val: "99"    },
-  ];
+  // 2. Connect Dashboard statistics to existing Products data
+  const productsStats = useMemo(() => {
+    const total = products.length;
+    const available = products.filter((p) => p.status === "Available" || p.stock > 10).length;
+    const lowStock = products.filter((p) => p.status === "Low Stock" || (p.stock > 0 && p.stock <= 10)).length;
+    const inventoryValuation = products.reduce((sum, p) => sum + (p.price * p.stock), 0);
+    return { total, available, lowStock, inventoryValuation };
+  }, [products]);
 
-  const activities = [
-    { dot: "#16a34a", title: "12 invoices have been paid", time: "12 min ago",
-      sub: "Invoices have been paid to the company", file: true },
-    { dot: "#2563eb", title: "Client meeting with John", time: "45 min ago",
-      sub: "Project meeting with John @10:15am",
-      who: "Laura McCalley (Client) CEO at TrendDirectory" },
-    { dot: "#d97706", title: "Create a new project for client", time: "45 min ago",
-      sub: "6 team members in a project" },
-  ];
+  // 3. Connect Dashboard statistics to existing Customers data
+  const customersStats = useMemo(() => {
+    const total = customers.length;
+    const active = customers.filter((c) => c.status === "Active").length;
+    const vip = customers.filter((c) => c.status === "VIP").length;
+    const inactive = customers.filter((c) => c.status === "Inactive").length;
+    return { total, active, vip, inactive };
+  }, [customers]);
 
-  const browsers = [
-    { browser: "Chrome",     visits: "8.92k", pct: 64.75, color: "#3b82f6" },
-    { browser: "Safari",     visits: "2k",    pct: 18.43, color: "#60a5fa" },
-    { browser: "Firefox",    visits: "328",   pct: 6.37,  color: "#a855f7" },
-    { browser: "Edge",       visits: "143",   pct: 6.05,  color: "#22d3ee" },
-    { browser: "Opera",      visits: "82",    pct: 2.12,  color: "#ef4444" },
-    { browser: "UC Browser", visits: "328",   pct: 20.15, color: "#f59e0b" },
-  ];
+  const membersStats = useMemo(() => {
+    const total = members.length;
+    const vip = members.filter((m) => m.membershipType === "VIP").length;
+    const newThisMonth = members.filter((m) => m.joinDate && m.joinDate.startsWith("2026-06")).length;
+    
+    const juneCount = members.filter((m) => m.joinDate && m.joinDate.startsWith("2026-06")).length;
+    const mayCount = members.filter((m) => m.joinDate && m.joinDate.startsWith("2026-05")).length;
+    const growthVal = mayCount === 0 ? juneCount * 100 : Math.round(((juneCount - mayCount) / mayCount) * 100);
+    const growthStr = growthVal >= 0 ? `+${growthVal}%` : `${growthVal}%`;
+
+    const trend = Array(12).fill(0);
+    members.forEach((m) => {
+      if (m.joinDate) {
+        const month = parseInt(m.joinDate.split("-")[1], 10) - 1;
+        if (month >= 0 && month < 12) {
+          trend[month] += 1;
+        }
+      }
+    });
+
+    return { total, vip, newThisMonth, growthStr, trend };
+  }, [members]);
+
+  // 4. Revenue chart must be generated from actual order data grouped by month
+  const monthlyRevenue = useMemo(() => {
+    const revenueByMonth = Array(12).fill(0);
+    orders.forEach((o) => {
+      if (o.orderDate) {
+        const month = parseInt(o.orderDate.split("-")[1], 10) - 1;
+        if (month >= 0 && month < 12) {
+          revenueByMonth[month] += o.totalPrice;
+        }
+      }
+    });
+    return revenueByMonth;
+  }, [orders]);
+
+  // 5. Product category chart/widget using actual product categories
+  const categoryStats = useMemo(() => {
+    const counts = { Dress: 0, Shoes: 0, Bags: 0, Accessories: 0, Outer: 0 };
+    products.forEach((p) => {
+      const cat = p.category;
+      if (cat === "Dress") counts.Dress += p.stock;
+      else if (cat === "Shoes") counts.Shoes += p.stock;
+      else if (cat === "Bag" || cat === "Bags") counts.Bags += p.stock;
+      else if (cat === "Accessories") counts.Accessories += p.stock;
+      else if (cat === "Outer") counts.Outer += p.stock;
+    });
+
+    return [
+      { label: "Dress", val: `${counts.Dress} items`, icon: <IShirt />, bg: "bg-primary-light", tc: "text-primary" },
+      { label: "Shoes", val: `${counts.Shoes} items`, icon: <IBall />, bg: "bg-emerald-50", tc: "text-emerald-600" },
+      { label: "Bags", val: `${counts.Bags} items`, icon: <IWallet />, bg: "bg-purple-50", tc: "text-purple-600" },
+      { label: "Accessories", val: `${counts.Accessories} items`, icon: <ILamp />, bg: "bg-amber-50", tc: "text-amber-600" },
+      { label: "Outer", val: `${counts.Outer} items`, icon: <ICard />, bg: "bg-rose-50", tc: "text-rose-600" },
+    ];
+  }, [products]);
+
+  // 7. Recent Orders widget using latest orders
+  const recentOrders = useMemo(() => {
+    return [...orders]
+      .sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate) || b.orderId - a.orderId)
+      .slice(0, 5);
+  }, [orders]);
+
+  // 8. Low Stock Alert widget using products marked as Low Stock or Out of Stock
+  const lowStockAlerts = useMemo(() => {
+    return products
+      .filter((p) => p.status === "Low Stock" || p.status === "Out of Stock" || p.stock <= 10)
+      .sort((a, b) => a.stock - b.stock)
+      .slice(0, 5);
+  }, [products]);
+
+  // 9. Top Selling Products widget based on order data
+  const topSellingProducts = useMemo(() => {
+    const counts = {};
+    orders.forEach((o) => {
+      counts[o.product] = (counts[o.product] || 0) + 1;
+    });
+    return Object.keys(counts)
+      .map((name) => ({ name, count: counts[name] }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }, [orders]);
 
   return (
-    <div style={{
-      fontFamily: "'Segoe UI', system-ui, sans-serif",
-      background: "#f1f5f9", minHeight: "100vh",
-      display: "flex", flexDirection: "column",
-      opacity: isVisible ? 1 : 0, transition: "opacity .5s",
-    }}>
-      <main style={{ flex: 1, overflow: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+    <div className={`transition-opacity duration-500 ${isVisible ? 'opacity-100' : 'opacity-0'} space-y-6`}>
 
-        {/* ── ROW 1: Greeting + 3 mini stat cards ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 12 }}>
+      {/* ── BOUTIQUE & LIFESTYLE HERO BANNER ── */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 rounded-3xl p-8 md:p-12 text-white border border-slate-850 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="relative z-10 max-w-xl space-y-3">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold uppercase tracking-wider">
+            ✨ Boutique & Lifestyle Management
+          </span>
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight leading-tight">
+            Elevate Retail Performance & Customer Experience
+          </h1>
+          <p className="text-slate-400 text-xs md:text-sm leading-relaxed max-w-lg">
+            Pantau pesanan butik, analisis tren mode terbaru, kelola data pelanggan VIP, dan kembangkan bisnis ritel lifestyle Anda dalam satu dashboard cerdas.
+          </p>
+        </div>
 
-          <Card style={{ background: "linear-gradient(135deg,#e0f2fe,#f0f9ff)", border: "1px solid #bae6fd",
-            display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div>
-              <p style={{ fontSize: 14, fontWeight: 800, color: "#0369a1", marginBottom: 4 }}>
-                Congratulations Akhlesh! 🎉
-              </p>
-              <p style={{ fontSize: 12, color: "#0284c7", marginBottom: 14, lineHeight: 1.6 }}>
-                You have done 72% more sales today.<br />Check your new badge in your profile.
-              </p>
-              <button style={{
-                fontSize: 12, padding: "6px 16px", borderRadius: 20, fontWeight: 700,
-                border: "1.5px solid #0369a1", background: "transparent", color: "#0369a1", cursor: "pointer",
-              }}>View Badges</button>
+        <div className="relative z-10 flex flex-wrap gap-3">
+          <div className="bg-white/10 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/10 text-center min-w-[100px]">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Products</p>
+            <p className="text-lg font-black text-white mt-1">{productsStats.total}</p>
+          </div>
+          <div className="bg-white/10 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/10 text-center min-w-[100px]">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total VIPs</p>
+            <p className="text-lg font-black text-emerald-400 mt-1">{customersStats.vip}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── CATEGORY CARDS ── */}
+      <div className="space-y-3">
+        <p className="text-xs font-bold text-slate-800 tracking-wider uppercase">Boutique Categories</p>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          {categoryStats.map((cat, i) => (
+            <div 
+              key={i} 
+              className="buiq-card buiq-card-hover group cursor-pointer flex flex-col justify-between aspect-[4/3] p-5 border border-slate-200/80 bg-white hover:border-primary/25 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300"
+            >
+              <div className={`w-8 h-8 rounded-xl ${cat.bg} ${cat.tc} flex items-center justify-center font-bold text-xs`}>
+                {cat.icon}
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-800 tracking-tight">{cat.label}</p>
+                <p className="text-[10px] text-slate-400 font-semibold mt-0.5">{cat.val}</p>
+              </div>
             </div>
-            <div style={{ fontSize: 56, opacity: 0.75 }}>👨‍💻</div>
-          </Card>
+          ))}
+        </div>
+      </div>
 
-          <Card>
-            <p style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600 }}>Order</p>
-            <p style={{ fontSize: 22, fontWeight: 800, color: "#1e293b", margin: "4px 0" }}>276K</p>
-            <Sparkline data={[10,18,14,22,19,28,24,32,30,38]} color="#22c55e" height={50} />
-          </Card>
+      {/* ── ROW 1: Greeting + 3 mini stat cards ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="bg-primary-light border-primary/20 flex justify-between items-center p-6">
+          <div>
+            <p className="text-sm font-bold text-primary mb-1">
+              BUIQ Overview 🛍️
+            </p>
+            <p className="text-xs text-primary/80 mb-4 leading-relaxed">
+              Toko Anda memiliki total {ordersStats.total} orders terdaftar.<br />Valuasi inventori saat ini mencapai Rp {productsStats.inventoryValuation.toLocaleString()}.
+            </p>
+            <button className="text-xs px-4 py-1.5 rounded-full font-bold border border-primary text-primary bg-white hover:bg-primary hover:text-white transition-all cursor-pointer">
+              BUIQ Active
+            </button>
+          </div>
+        </Card>
 
-          <Card>
-            <p style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600 }}>Payments</p>
-            <p style={{ fontSize: 22, fontWeight: 800, color: "#1e293b", margin: "4px 0" }}>$2,456</p>
-            <span style={{ display: "inline-block", fontSize: 11, fontWeight: 700,
-              padding: "2px 8px", borderRadius: 20, background: "#fef2f2", color: "#dc2626" }}>
-              ↓ 14.02%
+        <Card>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Total Orders</p>
+          <p className="text-2xl font-black text-slate-800 my-1">{ordersStats.total}</p>
+          <Sparkline data={orders.slice(-10).map(o => o.totalPrice)} color="#10B981" height={45} />
+        </Card>
+
+        <Card>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Pending Orders</p>
+          <div className="flex items-baseline gap-2 my-1">
+            <span className="text-2xl font-black text-slate-800">{ordersStats.pending}</span>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">
+              In progress
             </span>
-            <Sparkline data={[40,32,38,28,35,26,30,22,28,20]} color="#ef4444" height={40} />
-          </Card>
+          </div>
+          <Sparkline data={orders.filter(o => o.status === "Pending").slice(-10).map(o => o.totalPrice)} color="#EF4444" height={45} />
+        </Card>
 
+        <Card>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Valuation</p>
+          <p className="text-lg font-black text-slate-800 my-1">Rp {productsStats.inventoryValuation.toLocaleString()}</p>
+          <div className="text-[10px] text-slate-400 font-medium mt-2">
+            Dari {productsStats.total} total produk
+          </div>
+        </Card>
+      </div>
+
+      {/* ── ROW 2: Revenue chart + Donut + Profile Report ── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Revenue chart */}
+        <Card className="md:col-span-2">
+          <SectionTitle right={
+            <div className="flex gap-3 text-[10px] font-semibold">
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-primary inline-block" />
+                <span className="text-slate-500">2026 Monthly Revenue</span>
+              </span>
+            </div>
+          }>Monthly Revenue (Rp)</SectionTitle>
+          <RevenueBarChart monthlyData={monthlyRevenue} />
+        </Card>
+
+        {/* Customer status donut chart */}
+        <Card className="flex flex-col items-center justify-between">
+          <div className="flex justify-between w-full items-center mb-2">
+            <p className="text-xs font-bold text-slate-800">Customer Status</p>
+            <span className="text-[10px] text-slate-400 font-medium">Actual Segment</span>
+          </div>
+          <div className="relative flex items-center justify-center my-3">
+            <CustomerStatusDonutChart 
+              active={customersStats.active} 
+              vip={customersStats.vip} 
+              inactive={customersStats.inactive} 
+            />
+            <div className="absolute text-center">
+              <p className="text-xl font-black text-slate-800">{customersStats.total}</p>
+              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Customers</p>
+            </div>
+          </div>
+          <div className="flex justify-between w-full mt-4 pt-3 border-t border-slate-100 text-[10px]">
+            <div className="text-center flex-1">
+              <p className="text-slate-400 font-medium">Active</p>
+              <p className="font-bold text-emerald-600 mt-0.5">{customersStats.active}</p>
+            </div>
+            <div className="text-center flex-1 border-x border-slate-100">
+              <p className="text-slate-400 font-medium">VIP</p>
+              <p className="font-bold text-primary mt-0.5">{customersStats.vip}</p>
+            </div>
+            <div className="text-center flex-1">
+              <p className="text-slate-400 font-medium">Inactive</p>
+              <p className="font-bold text-slate-500 mt-0.5">{customersStats.inactive}</p>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* ── MEMBER & LOYALTY INTEGRATION ── */}
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <p className="text-xs font-bold text-slate-800 tracking-wider uppercase">Member & Loyalty Overview</p>
+          <span className="text-[10px] text-slate-400 font-bold uppercase">Dynamic CRM Sync</span>
+        </div>
+        
+        {/* Member Widgets */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
-            <p style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600 }}>Revenue</p>
-            <p style={{ fontSize: 22, fontWeight: 800, color: "#1e293b", margin: "4px 0" }}>425k</p>
-            <RevMiniBar />
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Total Members</p>
+            <div className="flex justify-between items-baseline mt-1">
+              <p className="text-2xl font-black text-slate-800">{membersStats.total}</p>
+              <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-primary-light text-primary border border-primary/10">Active Loyalty</span>
+            </div>
+          </Card>
+          <Card>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">VIP Members</p>
+            <div className="flex justify-between items-baseline mt-1">
+              <p className="text-2xl font-black text-purple-700">{membersStats.vip}</p>
+              <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-600 border border-purple-100 font-extrabold">Top Tier</span>
+            </div>
+          </Card>
+          <Card>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">New Members This Month</p>
+            <div className="flex justify-between items-baseline mt-1">
+              <p className="text-2xl font-black text-emerald-600">{membersStats.newThisMonth}</p>
+              <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">June 2026</span>
+            </div>
+          </Card>
+          <Card>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Membership Growth</p>
+            <div className="flex justify-between items-baseline mt-1">
+              <p className="text-2xl font-black text-slate-800">{membersStats.growthStr}</p>
+              <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100">MoM Registration</span>
+            </div>
           </Card>
         </div>
 
-        {/* ── ROW 2: Revenue chart + Donut + Profile Report ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1.2fr", gap: 12 }}>
-
-          <Card>
+        {/* Member Charts and Callouts */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="md:col-span-2">
             <SectionTitle right={
-              <div style={{ display: "flex", gap: 12, fontSize: 12 }}>
-                {[["#3b82f6","2024"],["#bfdbfe","2023"]].map(([c,l]) => (
-                  <span key={l} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    <span style={{ width: 10, height: 10, borderRadius: 2, background: c, display: "inline-block" }} />
-                    <span style={{ color: "#64748b" }}>{l}</span>
-                  </span>
-                ))}
+              <div className="flex gap-3 text-[10px] font-semibold">
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-primary inline-block" />
+                  <span className="text-slate-500">2026 Registration Trend</span>
+                </span>
               </div>
-            }>Total Revenue</SectionTitle>
-            <RevenueBarChart />
+            }>Member Registration Trend</SectionTitle>
+            <MemberRegistrationTrendChart trendData={membersStats.trend} />
           </Card>
 
-          <Card style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", width: "100%", marginBottom: 10 }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: "#1e293b" }}>2024</p>
-              <select style={{ fontSize: 11, border: "1px solid #e2e8f0", borderRadius: 6,
-                padding: "2px 6px", background: "#fff", color: "#64748b" }}>
-                <option>2024</option>
-              </select>
+          <Card className="bg-gradient-to-br from-primary to-primary-hover border-transparent text-white flex flex-col justify-between p-6">
+            <div className="space-y-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/20 text-white border border-white/20 text-[9px] font-bold uppercase tracking-wider">
+                👑 Boutique Club
+              </span>
+              <h4 className="text-lg font-black leading-tight tracking-tight">Enterprise Member Retention</h4>
+              <p className="text-white/85 text-[11px] leading-relaxed">
+                Kelola status keanggotaan dan peningkatan tingkat (tiering) pelanggan loyal secara instan untuk melacak valuasi belanja butik dan retensi pelanggan.
+              </p>
             </div>
-            <div style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
-              <DonutChart value={78} size={120} cutout="72%" color="#3b82f6" />
-              <div style={{ position: "absolute", textAlign: "center" }}>
-                <p style={{ fontSize: 18, fontWeight: 800, color: "#1e293b" }}>78%</p>
-                <p style={{ fontSize: 10, color: "#94a3b8" }}>Growth</p>
-              </div>
-            </div>
-            <p style={{ fontSize: 11, color: "#64748b", marginTop: 8 }}>62% Company Growth</p>
-            <div style={{ display: "flex", justifyContent: "space-between", width: "100%",
-              marginTop: 10, borderTop: "1px solid #f1f5f9", paddingTop: 10 }}>
-              {[["Goal","$32.5k"],["2024","$41.2k"]].map(([lbl, val]) => (
-                <div key={lbl} style={{ textAlign: "center" }}>
-                  <p style={{ fontSize: 10, color: "#94a3b8" }}>{lbl}</p>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: "#1e293b" }}>{val}</p>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          <Card>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-              <div>
-                <p style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600 }}>Profile Report</p>
-                <p style={{ fontSize: 22, fontWeight: 800, color: "#1e293b" }}>$84,686k</p>
-              </div>
-              <div style={{ display: "flex", gap: 6 }}>
-                <span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 20, background: "#eff6ff", color: "#1d4ed8", fontWeight: 700 }}>New 2024</span>
-                <span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 20, background: "#f8fafc", color: "#64748b", fontWeight: 700, border: "1px solid #e2e8f0" }}>2023</span>
-              </div>
-            </div>
-            <Sparkline data={[20,35,28,50,42,60,52,70,65,82]} color="#f59e0b" height={80} />
+            <Link 
+              to="/member-management" 
+              className="mt-6 w-full text-center py-2.5 bg-white text-primary font-bold text-xs rounded-xl shadow-lg shadow-primary-hover/10 hover:shadow-xl transition-all cursor-pointer block"
+            >
+              Kelola Member
+            </Link>
           </Card>
         </div>
+      </div>
 
-        {/* ── ROW 3: Order Stats + Income + Transaction ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-
-          {/* Order Statistics */}
-          <Card>
-            <SectionTitle right={<span style={{ fontSize: 11, color: "#94a3b8" }}>42,821 Total Sales</span>}>
-              Order Statistics
-            </SectionTitle>
-            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
-              <div style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
-                <DonutChart value={38} size={72} cutout="68%" color="#3b82f6" />
-                <div style={{ position: "absolute", textAlign: "center" }}>
-                  <p style={{ fontSize: 11, fontWeight: 800, color: "#1e293b" }}>38%</p>
-                  <p style={{ fontSize: 9, color: "#94a3b8" }}>Weekly</p>
-                </div>
-              </div>
-              <div>
-                <p style={{ fontSize: 22, fontWeight: 800, color: "#1e293b" }}>8,258</p>
-                <p style={{ fontSize: 12, color: "#94a3b8" }}>Total Orders</p>
-              </div>
-            </div>
-            <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
-              {orderCategories.map((o, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ width: 34, height: 34, borderRadius: "50%", background: o.bg, color: o.tc,
-                      display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      {o.icon}
-                    </div>
-                    <div>
-                      <p style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{o.label}</p>
-                      <p style={{ fontSize: 10, color: "#94a3b8" }}>{o.sub}</p>
-                    </div>
+      {/* ── ROW 3: Recent Orders + Low Stock Alerts + Top Selling Products ── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Recent Orders Widget */}
+        <Card>
+          <SectionTitle right={<span className="text-[10px] text-slate-400 font-semibold">Latest 5</span>}>
+            Recent Orders
+          </SectionTitle>
+          <div className="flex flex-col gap-3">
+            {recentOrders.map((o) => (
+              <div key={o.orderId} className="flex items-center justify-between text-xs py-1 border-b border-slate-50 last:border-0">
+                <div className="flex items-center gap-2.5">
+                  <img src={o.customerAvatar} alt={o.customerName} className="w-8 h-8 rounded-full object-cover shadow-sm" />
+                  <div>
+                    <p className="font-bold text-slate-800">{o.customerName}</p>
+                    <p className="text-[10px] text-slate-400">{o.product}</p>
                   </div>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: "#1e293b" }}>{o.val}</p>
                 </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* Income */}
-          <Card>
-            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-              {["Income","Expenses","Profit"].map(t => (
-                <button key={t} style={tabStyle(incomeTab === t)} onClick={() => setIncomeTab(t)}>{t}</button>
-              ))}
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-              <div>
-                <p style={{ fontSize: 11, color: "#94a3b8" }}>Total Balance</p>
-                <p style={{ fontSize: 16, fontWeight: 800, color: "#1e293b" }}>$459.10</p>
-              </div>
-              <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 20,
-                background: "#f0fdf4", color: "#15803d", fontWeight: 700 }}>+$2.4k</span>
-            </div>
-            <IncomeAreaChart />
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12,
-              padding: 10, background: "#f8fafc", borderRadius: 10 }}>
-              <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#f0fdf4",
-                color: "#15803d", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <ITrend />
-              </div>
-              <div>
-                <p style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>Income this week</p>
-                <p style={{ fontSize: 11, color: "#94a3b8" }}>0.29k more than last week</p>
-              </div>
-            </div>
-          </Card>
-
-          {/* Transaction */}
-          <Card>
-            <SectionTitle right={<p style={{ fontSize: 11, color: "#94a3b8" }}>Group</p>}>
-              Transaction
-            </SectionTitle>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {transactions.map((t, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ width: 34, height: 34, borderRadius: "50%", background: t.bg, color: t.tc,
-                      display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      {t.icon}
-                    </div>
-                    <div>
-                      <p style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{t.label}</p>
-                      <p style={{ fontSize: 10, color: "#94a3b8" }}>{t.sub}</p>
-                    </div>
-                  </div>
-                  <p style={{ fontSize: 12, fontWeight: 700, color: t.pos ? "#15803d" : "#dc2626" }}>
-                    {t.val} USD
-                  </p>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </div>
-
-        {/* ── ROW 4: Activity Timeline + Browser Table ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 12 }}>
-
-          {/* Activity Timeline */}
-          <Card>
-            <SectionTitle>Activity Timeline</SectionTitle>
-            {activities.map((a, i) => (
-              <div key={i} style={{ display: "flex", gap: 12 }}>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <div style={{ width: 10, height: 10, borderRadius: "50%", background: a.dot, flexShrink: 0, marginTop: 3 }} />
-                  {i < activities.length - 1 && (
-                    <div style={{ width: 1.5, flex: 1, background: "#e2e8f0", margin: "4px 0" }} />
-                  )}
-                </div>
-                <div style={{ flex: 1, paddingBottom: 16 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <p style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{a.title}</p>
-                    <p style={{ fontSize: 10, color: "#94a3b8", whiteSpace: "nowrap", marginLeft: 8 }}>{a.time}</p>
-                  </div>
-                  <p style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{a.sub}</p>
-                  {a.who && <p style={{ fontSize: 10, color: "#94a3b8", marginTop: 4 }}>{a.who}</p>}
-                  {a.file && (
-                    <div style={{ marginTop: 6, display: "inline-flex", alignItems: "center", gap: 4,
-                      fontSize: 11, padding: "3px 10px", borderRadius: 6,
-                      border: "1px solid #e2e8f0", color: "#64748b" }}>
-                      <IFile /><span>Invoice.pdf</span>
-                    </div>
-                  )}
+                <div className="text-right flex flex-col items-end gap-1">
+                  <p className="font-bold text-primary">Rp {o.totalPrice.toLocaleString()}</p>
+                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider ${
+                    o.status === "Completed" ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : o.status === "Pending" ? "bg-amber-50 text-amber-700 border border-amber-100" : "bg-rose-50 text-rose-700 border border-rose-100"
+                  }`}>{o.status}</span>
                 </div>
               </div>
             ))}
-          </Card>
+            {recentOrders.length === 0 && (
+              <p className="text-xs text-slate-400 text-center py-4">No recent orders</p>
+            )}
+          </div>
+        </Card>
 
-          {/* Browser Stats */}
-          <Card>
-            <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-              {["Income","Operating System","Country"].map(t => (
-                <button key={t} style={tabStyle(browserTab === t)} onClick={() => setBrowserTab(t)}>{t}</button>
-              ))}
-            </div>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-              <thead>
-                <tr>
-                  {["No","Browser","Visits","Data in Percentage"].map(h => (
-                    <th key={h} style={{ textAlign: "left", color: "#94a3b8", fontWeight: 600,
-                      padding: "4px 6px 10px", borderBottom: "1px solid #f1f5f9" }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {browsers.map((b, i) => (
-                  <tr key={i}>
-                    <td style={{ padding: "8px 6px", color: "#94a3b8" }}>{i + 1}</td>
-                    <td style={{ padding: "8px 6px", fontWeight: 600, color: "#1e293b" }}>{b.browser}</td>
-                    <td style={{ padding: "8px 6px", color: "#64748b" }}>{b.visits}</td>
-                    <td style={{ padding: "8px 6px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <div style={{ flex: 1, height: 6, borderRadius: 3, background: "#f1f5f9", overflow: "hidden" }}>
-                          <div style={{ width: `${b.pct}%`, height: "100%", background: b.color, borderRadius: 3 }} />
-                        </div>
-                        <span style={{ fontSize: 11, color: "#64748b", minWidth: 40 }}>{b.pct}%</span>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </Card>
-        </div>
+        {/* Low Stock Alerts Widget */}
+        <Card>
+          <SectionTitle right={<span className="text-[10px] text-rose-500 font-semibold">Alerts</span>}>
+            Low Stock Alerts
+          </SectionTitle>
+          <div className="flex flex-col gap-3">
+            {lowStockAlerts.map((p) => (
+              <div key={p.productId} className="flex items-center justify-between text-xs py-1 border-b border-slate-50 last:border-0">
+                <div className="flex items-center gap-2.5">
+                  <img src={p.image} alt={p.productName} className="w-8 h-8 rounded-xl object-cover shadow-sm border border-slate-100" />
+                  <div>
+                    <p className="font-bold text-slate-800">{p.productName}</p>
+                    <p className="text-[10px] text-slate-400">{p.sku} • {p.category}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    p.stock === 0 ? "bg-rose-50 text-rose-600" : "bg-amber-50 text-amber-600"
+                  }`}>
+                    {p.stock} pcs left
+                  </span>
+                </div>
+              </div>
+            ))}
+            {lowStockAlerts.length === 0 && (
+              <p className="text-xs text-emerald-600 text-center py-4">All products fully stocked! 🎉</p>
+            )}
+          </div>
+        </Card>
 
-      </main>
+        {/* Top Selling Products Widget */}
+        <Card>
+          <SectionTitle right={<span className="text-[10px] text-emerald-500 font-semibold">By Quantity</span>}>
+            Top Selling Products
+          </SectionTitle>
+          <div className="flex flex-col gap-3">
+            {topSellingProducts.map((p, i) => (
+              <div key={i} className="flex items-center justify-between text-xs py-1 border-b border-slate-50 last:border-0">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-6 h-6 rounded-lg bg-primary-light text-primary flex items-center justify-center font-black text-xs">
+                    #{i + 1}
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-800">{p.name}</p>
+                    <p className="text-[10px] text-slate-400">Popular items</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs font-bold text-slate-700">{p.count} sales</span>
+                </div>
+              </div>
+            ))}
+            {topSellingProducts.length === 0 && (
+              <p className="text-xs text-slate-400 text-center py-4">No sales data yet</p>
+            )}
+          </div>
+        </Card>
+      </div>
+
     </div>
   );
 }

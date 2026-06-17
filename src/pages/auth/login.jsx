@@ -1,180 +1,158 @@
-import axios from "axios"
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { ImSpinner2 } from "react-icons/im"
+import axios from "axios";
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { ImSpinner2 } from "react-icons/im";
+import { FaGoogle, FaLinkedin, FaFacebook } from "react-icons/fa";
 
 export default function Login() {
-    const navigate = useNavigate()
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState("")
+  const [dataForm, setDataForm] = useState({
+    email: "",
+    password: "",
+  });
 
-    const [dataForm, setDataForm] = useState({
-        email: "",
-        password: "",
-    })
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setDataForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
-    const handleChange = (e) => {
-        const { name, value } = e.target
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
-        setDataForm((prev) => ({
-            ...prev,
-            [name]: value,
-        }))
-    }
+    axios
+      .post("https://dummyjson.com/user/login", {
+        username: dataForm.email,
+        password: dataForm.password,
+      })
+      .then((response) => {
+        if (response.status === 200) {
+          localStorage.setItem("buiq_token", response.data.token);
+          localStorage.setItem("buiq_user", JSON.stringify(response.data));
+          navigate("/dashboard");
+        }
+      })
+      .catch((err) => {
+        setError(err?.response?.data?.message || "Login gagal");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault()
+  return (
+    <div className="space-y-6">
+      {/* Title */}
+      <div>
+        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Selamat Datang Kembali</h1>
+        <p className="text-xs text-slate-500 mt-1.5">
+          Silakan masuk ke akun BUIQ Anda untuk mulai mengelola boutique.
+        </p>
+      </div>
 
-        setLoading(true)
-        setError("")
-
-        axios
-            .post("https://dummyjson.com/user/login", {
-                username: dataForm.email,
-                password: dataForm.password,
-            })
-            .then((response) => {
-                if (response.status === 200) {
-                    navigate("/")
-                }
-            })
-            .catch((err) => {
-                setError(
-                    err?.response?.data?.message ||
-                    "Login gagal"
-                )
-            })
-            .finally(() => {
-                setLoading(false)
-            })
-    }
-
-    return (
-        <div>
-
-            {/* LOGO */}
-            <h1 className="text-5xl font-bold text-blue-600 mb-20">
-                BUTIQ
-            </h1>
-
-            {/* TITLE */}
-            <h1 className="text-[48px] leading-tight font-bold text-blue-600 mb-6">
-                Smart Fashion Management For Modern Boutique Business
-            </h1>
-
-            {/* SUBTITLE */}
-            <p className="text-gray-500 mb-10 text-lg">
-                Welcome back! Please login to your BUTIQ account.
-            </p>
-
-            {/* ERROR */}
-            {error && (
-                <div className="mb-5 bg-red-50 border border-red-200 text-red-500 p-3 text-sm">
-                    {error}
-                </div>
-            )}
-
-            {/* FORM */}
-            <form onSubmit={handleSubmit}>
-
-                {/* EMAIL */}
-                <div className="border border-gray-300 border-b-0">
-                    <input
-                        type="text"
-                        name="email"
-                        onChange={handleChange}
-                        placeholder="Email Address"
-                        className="w-full px-5 py-4 outline-none"
-                    />
-                </div>
-
-                {/* PASSWORD */}
-                <div className="border border-gray-300">
-                    <input
-                        type="password"
-                        name="password"
-                        onChange={handleChange}
-                        placeholder="Password"
-                        className="w-full px-5 py-4 outline-none"
-                    />
-                </div>
-
-                {/* OPTIONS */}
-                <div className="flex items-center justify-between mt-5 mb-10 text-gray-500 text-sm">
-
-                    <label className="flex items-center gap-2">
-                        <input type="checkbox" />
-                        Remember Me
-                    </label>
-
-                    <button
-                        type="button"
-                        className="hover:text-blue-600 transition"
-                    >
-                        Forgot Password?
-                    </button>
-
-                </div>
-
-                {/* BUTTON */}
-                <div className="flex gap-5 mb-16">
-
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 transition"
-                    >
-                        {loading ? (
-                            <span className="flex items-center">
-                                <ImSpinner2 className="animate-spin mr-2" />
-                                Loading...
-                            </span>
-                        ) : (
-                            "Login"
-                        )}
-                    </button>
-
-                    <button
-                        type="button"
-                        className="border border-blue-500 text-blue-600 px-10 py-4 hover:bg-blue-50 transition"
-                    >
-                        Sign Up
-                    </button>
-
-                </div>
-
-                {/* SOCIAL LOGIN */}
-                <div className="flex items-center justify-between text-sm">
-
-                    <span className="text-gray-500">
-                        Or login with
-                    </span>
-
-                    <button
-                        type="button"
-                        className="text-blue-600 font-semibold"
-                    >
-                        Facebook
-                    </button>
-
-                    <button
-                        type="button"
-                        className="text-blue-600 font-semibold"
-                    >
-                        LinkedIn
-                    </button>
-
-                    <button
-                        type="button"
-                        className="text-blue-600 font-semibold"
-                    >
-                        Google
-                    </button>
-
-                </div>
-
-            </form>
+      {/* Error Message */}
+      {error && (
+        <div className="bg-rose-50 border border-rose-100 text-rose-700 text-xs p-3 rounded-xl font-medium">
+          {error}
         </div>
-    )
+      )}
+
+      {/* Form */}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Email Field */}
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Username / Email</label>
+          <input
+            type="text"
+            name="email"
+            placeholder="Contoh: emilys"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary text-xs outline-none transition-all placeholder:text-slate-400"
+            value={dataForm.email}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        {/* Password Field */}
+        <div className="space-y-1.5">
+          <div className="flex justify-between items-center">
+            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Password</label>
+            <Link to="/forgot" className="text-[11px] font-bold text-primary hover:underline">
+              Lupa Password?
+            </Link>
+          </div>
+          <input
+            type="password"
+            name="password"
+            placeholder="••••••••"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary text-xs outline-none transition-all placeholder:text-slate-400"
+            value={dataForm.password}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        {/* Remember me checkbox */}
+        <label className="flex items-center gap-2 text-xs text-slate-500 font-semibold cursor-pointer">
+          <input
+            type="checkbox"
+            className="rounded border-slate-300 text-primary focus:ring-primary"
+          />
+          <span>Ingat Saya</span>
+        </label>
+
+        {/* Submit Buttons */}
+        <div className="flex flex-col gap-2 pt-2">
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-primary hover:bg-primary-hover text-white text-xs font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-50"
+          >
+            {loading ? (
+              <>
+                <ImSpinner2 className="animate-spin text-sm" />
+                <span>Memproses...</span>
+              </>
+            ) : (
+              <span>Masuk Sekarang</span>
+            )}
+          </button>
+
+          <Link
+            to="/register"
+            className="w-full border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold py-2.5 rounded-xl flex items-center justify-center transition-all cursor-pointer text-center"
+          >
+            Daftar Akun Baru
+          </Link>
+        </div>
+      </form>
+
+      {/* Social Login Separator */}
+      <div className="relative flex py-2 items-center">
+        <div className="flex-grow border-t border-slate-200"></div>
+        <span className="flex-shrink mx-4 text-slate-400 text-[10px] font-bold uppercase tracking-wider">Atau masuk dengan</span>
+        <div className="flex-grow border-t border-slate-200"></div>
+      </div>
+
+      {/* Social Grid */}
+      <div className="grid grid-cols-3 gap-2">
+        <button className="flex items-center justify-center py-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-500 transition-colors cursor-pointer">
+          <FaGoogle size={14} className="text-rose-500" />
+        </button>
+        <button className="flex items-center justify-center py-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-500 transition-colors cursor-pointer">
+          <FaLinkedin size={14} className="text-blue-700" />
+        </button>
+        <button className="flex items-center justify-center py-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-500 transition-colors cursor-pointer">
+          <FaFacebook size={14} className="text-blue-800" />
+        </button>
+      </div>
+    </div>
+  );
 }
