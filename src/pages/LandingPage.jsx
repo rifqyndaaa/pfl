@@ -42,9 +42,30 @@ const products = [
 ];
 
 const testimonials = [
-  { quote: "BUIQ bridges the gap between designer streetwear and daily essential wear. The fits are structured, fabrics are premium, and the color palettes are understated and clean.", author: "Rian Pramana",   role: "Architect & Designer",  avatar: "/img/mens_fashion.png"    },
-  { quote: "Minimalist silhouettes, excellent durability, and fair pricing. The bag and shoe collections are beautifully crafted for urban commuters who value utility and design.",    author: "Amanda Safitri", role: "Creative Director",     avatar: "/img/womens_fashion.png"  },
-  { quote: "Their customer service is direct, responsive, and efficient. The lifestyle essentials have become a staple in my daily routine and look great on my workspace.",            author: "Daniel Wijaya",  role: "Tech Professional",     avatar: "/img/mens_fashion.png"    },
+  {
+    quote: "BUIQ's CRM transformed our store operations. We synced our offline loyalty program with our online boutique store, resulting in a 40% increase in repeat customer purchases within the first quarter.",
+    author: "Rian Pramana",
+    role: "Retail Operations Director",
+    company: "ZARA Indonesia",
+    avatar: "/img/mens_fashion.png",
+    rating: 5
+  },
+  {
+    quote: "The inventory analytics and automated low-stock warnings are exceptionally precise. We reduced overstocking costs by 25% while maintaining a 99% availability rate for our seasonal highlights.",
+    author: "Amanda Safitri",
+    role: "Chief Merchant & Designer",
+    company: "COS Store Jakarta",
+    avatar: "/img/womens_fashion.png",
+    rating: 5
+  },
+  {
+    quote: "Our floor staff love the clienteling interface. They can look up buyer profiles, past sizes, and VIP loyalty status in under 10 seconds. It makes customer service feel incredibly personalized.",
+    author: "Daniel Wijaya",
+    role: "Founder & Creative Director",
+    company: "W/D Studio Jakarta",
+    avatar: "/img/mens_fashion.png",
+    rating: 5
+  },
 ];
 
 const navItems = [
@@ -57,9 +78,9 @@ const navItems = [
 const heroVideoUrl = "https://www.shutterstock.com/shutterstock/videos/4034527353/preview/stock-footage-tromso-norway-people-at-storgata-main-pedestrian-shopping-street-in-the-city-center.mp4";
 
 const heroSlides = [
-  { id: 0, tag: "Collection 2026 · Vol. I", headline: "Fashion for every", italic: "moment of your day", desc: "Tailored silhouettes from selected natural fiber blends — designed to carry you from morning to evening without compromise." },
-  { id: 1, tag: "Curated Style · Designer", headline: "Elevated modern", italic: "wardrobe essentials", desc: "Refined apparel for the contemporary lifestyle. Minimalist cuts meet high-durability textiles for effortless daily utility." },
-  { id: 2, tag: "Clean Lines · Modern Shapes", headline: "Confidence in", italic: "every silhouette", desc: "Structured coordinates built for the dynamic pace of modern cities — natural-looking fibers tailored for transition." }
+  { id: 0, tag: "BUIQ CRM Platform", headline: "Manage your fashion", italic: "business with confidence", desc: "The unified CRM and store operations platform built specifically for modern fashion and lifestyle brands. Connect customer relationships, inventory analytics, and orders in one single experience." },
+  { id: 1, tag: "Data-Driven Insights", headline: "Real-time retail", italic: "and product analytics", desc: "Track sales performance, optimize your stock levels, and deliver personalized customer journeys. Make informed business decisions with quiet, precise, and powerful CRM features." },
+  { id: 2, tag: "Direct-to-Customer", headline: "Build deeper client", italic: "relationships easily", desc: "Understand buyer preferences, segment your audience, and coordinate orders seamlessly. Elevate your brand operations to match the premium quality of your collections." }
 ];
 
 // ─── COMPONENT ───────────────────────────────────────────────────────────────
@@ -76,10 +97,11 @@ export default function LandingPage() {
   const [contactForm,        setContactForm       ] = useState({ name: "", email: "", message: "" });
   const [formSubmitted,      setFormSubmitted      ] = useState(false);
   const [showScrollTop,      setShowScrollTop     ] = useState(false);
+  const [activeHotspot,      setActiveHotspot     ] = useState(0);
   const [activeNavId,        setActiveNavId       ] = useState("");
   const [chatOpen,           setChatOpen          ] = useState(false);
   const [chatInput,          setChatInput         ] = useState("");
-  const [chatMessages,       setChatMessages      ] = useState([{ sender: "bot", text: "Welcome to BUIQ. How can I help you today?" }]);
+  const [chatMessages,       setChatMessages      ] = useState([{ sender: "bot", text: "Welcome to BUIQ CRM Support. How can I assist you with your brand operations today?" }]);
   const [isTyping,           setIsTyping          ] = useState(false);
   const [videoError,         setVideoError        ] = useState(false);
 
@@ -140,9 +162,9 @@ export default function LandingPage() {
 
   const handleAddToBag = (name) => {
     setCartCount(p => p + 1);
-    setNotificationMsg(`${name} added to bag.`);
+    setNotificationMsg(`CRM Event: ${name} added to cart (Simulated Checkout Logged).`);
     setShowNotification(true);
-    setTimeout(() => setShowNotification(false), 2800);
+    setTimeout(() => setShowNotification(false), 3200);
   };
 
   const handleContactSubmit = (e) => {
@@ -159,13 +181,18 @@ export default function LandingPage() {
   const triggerBotResponse = (text) => {
     setIsTyping(true);
     const t = text.toLowerCase();
-    let reply = "I'm here to help. Ask about our products, delivery, or stores.";
-    if (t.includes("product") || t.includes("show"))       reply = "Our bestsellers:\n• Premium Cotton Heavyweight Tee — Rp 189.000\n• Classic Fit Oxford Shirt — Rp 349.000\n• Minimalist Oversized Hoodie — Rp 429.000\n\nBrowse the full catalog below.";
-    else if (t.includes("categor"))                         reply = "BUIQ offers five collections: Men's Fashion, Women's Fashion, Bags & Accessories, Shoes, and Lifestyle Essentials.";
-    else if (t.includes("hour") || t.includes("open"))      reply = "Boutique hours: Mon–Fri 09:00–21:00 · Sat–Sun 10:00–22:00. Online store is always open.";
-    else if (t.includes("contact") || t.includes("phone"))  reply = "Phone: +62 21 555 1234\nWhatsApp: +62 812 3456 7890\nEmail: info@buiqstore.com";
-    else if (t.includes("deliver") || t.includes("return")) reply = "We deliver nationwide with express options. Returns accepted within 7 days — unused, with original tags.";
-    else if (t.includes("hi") || t.includes("hello"))       reply = "Hello! How can BUIQ help you dress with quiet confidence today?";
+    let reply = "I'm here to help you explore BUIQ CRM. Ask me about features, integrations, pricing, or the live store demo.";
+    if (t.includes("feature") || t.includes("show") || t.includes("crm")) {
+      reply = "BUIQ CRM Core Features:\n• VIP Loyalty & Member Tiering\n• Real-Time Inventory Turn Tracking\n• Omnichannel Sales Operations\n• Actionable Customer Insights\n\nScroll to the 'Why Choose BUIQ' section to learn more.";
+    } else if (t.includes("demo") || t.includes("shop") || t.includes("cat")) {
+      reply = "The catalog below is a live demo of a retail shop powered by BUIQ CRM. Try adding items to the bag to see how BUIQ registers real-time orders!";
+    } else if (t.includes("integrat") || t.includes("shopify")) {
+      reply = "BUIQ integrates seamlessly with Shopify, WooCommerce, and offline POS systems to sync all your customer profiles and sales streams.";
+    } else if (t.includes("pricing") || t.includes("cost")) {
+      reply = "We offer flexible pricing tiers for growing boutiques and enterprise brands. Contact our sales team using the contact form below for a custom quote.";
+    } else if (t.includes("hi") || t.includes("hello")) {
+      reply = "Hello! Welcome to BUIQ CRM. How can I help you optimize your retail brand operations today?";
+    }
     setTimeout(() => { setIsTyping(false); setChatMessages(p => [...p, { sender: "bot", text: reply }]); }, 750);
   };
 
@@ -250,7 +277,7 @@ export default function LandingPage() {
 
               {/* Quick actions */}
               <div className="px-4 py-2.5 bg-white border-t border-slate-100 flex flex-wrap gap-1.5">
-                {["Products", "Categories", "Store Hours", "Contact", "Returns"].map(a => (
+                {["CRM Features", "Live Demo", "Integrations", "Pricing", "Contact Sales"].map(a => (
                   <button key={a} onClick={() => handleQuickAction(a, a.toLowerCase())}
                     className="bg-[#F8FAFC] hover:bg-[#EAF3FF] hover:text-[#2B7FFF] text-[#0F172A] border border-slate-200 px-2.5 py-1 rounded-full text-[9px] font-semibold uppercase tracking-wider transition-colors">
                     {a}
@@ -278,7 +305,7 @@ export default function LandingPage() {
       {/* ── Navigation ──────────────────────────────────────────────────────── */}
       <header className="fixed top-4 inset-x-0 z-40 px-4 sm:px-8">
         <div className={`max-w-7xl mx-auto px-6 py-4 flex items-center justify-between rounded-full border transition-all duration-300 ${
-          scrolled ? "bg-white/85 border-slate-200/40 shadow-[0_8px_30px_rgb(0,0,0,0.06)]" : "bg-white/75 border-white/20 shadow-[0_4px_20px_rgb(0,0,0,0.02)]"
+          scrolled ? "bg-white/85 border-slate-300/80 shadow-[0_8px_30px_rgb(0,0,0,0.06)]" : "bg-white/75 border-slate-200/60 shadow-[0_4px_20px_rgb(0,0,0,0.02)]"
         } backdrop-blur-md`}>
 
           <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
@@ -287,32 +314,15 @@ export default function LandingPage() {
           </button>
 
           <nav className="hidden lg:flex items-center gap-8">
-            {isLoggedIn ? (
-              <>
-                <Link to="/dashboard"
-                  className="text-[16px] font-semibold tracking-[-0.01em] py-1.5 relative transition-colors text-slate-600 hover:text-[#2B7FFF]">
-                  Dashboard
-                </Link>
-                <Link to="/dashboard"
-                  className="text-[16px] font-semibold tracking-[-0.01em] py-1.5 relative transition-colors text-slate-600 hover:text-[#2B7FFF]">
-                  Profile
-                </Link>
-                <button onClick={handleLogout}
-                  className="text-[16px] font-semibold tracking-[-0.01em] py-1.5 relative transition-colors text-slate-600 hover:text-[#2B7FFF]">
-                  Logout
-                </button>
-              </>
-            ) : (
-              navItems.map(item => (
-                <button key={item.id} onClick={() => scrollToSection(item.id)}
-                  className={`text-[16px] font-semibold tracking-[-0.01em] py-1.5 relative transition-colors hover:text-[#2B7FFF] ${activeNavId === item.id ? "text-[#2B7FFF]" : "text-slate-600"}`}>
-                  {item.label}
-                  {activeNavId === item.id && (
-                    <motion.span layoutId="navUnderline" className="absolute -bottom-1 inset-x-0 h-[2px] bg-[#2B7FFF] rounded-full" transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }} />
-                  )}
-                </button>
-              ))
-            )}
+            {navItems.map(item => (
+              <button key={item.id} onClick={() => scrollToSection(item.id)}
+                className={`text-[16px] font-semibold tracking-[-0.01em] py-1.5 relative transition-colors hover:text-[#2B7FFF] ${activeNavId === item.id ? "text-[#2B7FFF]" : "text-slate-600"}`}>
+                {item.label}
+                {activeNavId === item.id && (
+                  <motion.span layoutId="navUnderline" className="absolute -bottom-1 inset-x-0 h-[2px] bg-[#2B7FFF] rounded-full" transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }} />
+                )}
+              </button>
+            ))}
           </nav>
 
           <div className="hidden lg:flex items-center gap-6">
@@ -321,9 +331,14 @@ export default function LandingPage() {
               {cartCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#2B7FFF] text-white text-[8px] font-bold rounded-full flex items-center justify-center">{cartCount}</span>}
             </button>
             {isLoggedIn ? (
-              <Link to="/dashboard" className="bg-[#2B7FFF] hover:bg-[#2B7FFF]/80 text-white text-xs font-semibold tracking-wide px-6 py-3 rounded-full transition-all duration-300 shadow-md shadow-[#2B7FFF]/10">
-                Dashboard
-              </Link>
+              <div className="flex items-center gap-4">
+                <button onClick={handleLogout} className="text-xs font-semibold text-slate-500 hover:text-[#2B7FFF] transition-colors cursor-pointer">
+                  Logout
+                </button>
+                <Link to="/dashboard" className="bg-[#2B7FFF] hover:bg-[#2B7FFF]/80 text-white text-xs font-semibold tracking-wide px-6 py-3 rounded-full transition-all duration-300 shadow-md shadow-[#2B7FFF]/10">
+                  Dashboard
+                </Link>
+              </div>
             ) : (
               <Link to="/login" className="bg-[#0F172A] hover:bg-[#2B7FFF] text-white text-xs font-semibold tracking-wide px-6 py-3 rounded-full transition-all duration-300 shadow-md shadow-[#0F172A]/10 hover:shadow-[#2B7FFF]/20">
                 Login
@@ -354,35 +369,24 @@ export default function LandingPage() {
                 <button onClick={() => setMobileMenuOpen(false)}><MdClose size={22} className="text-slate-400" /></button>
               </div>
               <div className="flex flex-col gap-1 mb-auto">
-                {isLoggedIn ? (
-                  <>
-                    <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}
-                      className="text-left text-[13px] font-semibold text-slate-650 hover:text-[#2B7FFF] py-3 border-b border-slate-50 transition-colors">
-                      Dashboard
-                    </Link>
-                    <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}
-                      className="text-left text-[13px] font-semibold text-slate-650 hover:text-[#2B7FFF] py-3 border-b border-slate-50 transition-colors">
-                      Profile
-                    </Link>
-                    <button onClick={handleLogout}
-                      className="text-left text-[13px] font-semibold text-slate-650 hover:text-[#2B7FFF] py-3 border-b border-slate-50 transition-colors">
-                      Logout
-                    </button>
-                  </>
-                ) : (
-                  navItems.map(item => (
-                    <button key={item.id} onClick={() => scrollToSection(item.id)}
-                      className="text-left text-[13px] font-medium text-slate-650 hover:text-[#2B7FFF] py-3 border-b border-slate-50 transition-colors">
-                      {item.label}
-                    </button>
-                  ))
-                )}
+                {navItems.map(item => (
+                  <button key={item.id} onClick={() => scrollToSection(item.id)}
+                    className="text-left text-[13px] font-medium text-slate-650 hover:text-[#2B7FFF] py-3 border-b border-slate-50 transition-colors">
+                    {item.label}
+                  </button>
+                ))}
               </div>
               {isLoggedIn ? (
-                <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}
-                  className="mt-8 w-full bg-[#2B7FFF] hover:bg-[#2B7FFF]/80 text-white text-[10px] font-semibold tracking-[0.12em] py-3.5 rounded-full text-center transition-colors block">
-                  Dashboard
-                </Link>
+                <div className="space-y-3 mt-8">
+                  <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}
+                    className="w-full bg-[#2B7FFF] hover:bg-[#2B7FFF]/80 text-white text-[10px] font-semibold tracking-[0.12em] py-3.5 rounded-full text-center transition-colors block">
+                    Dashboard
+                  </Link>
+                  <button onClick={handleLogout}
+                    className="w-full border border-slate-200 text-slate-500 hover:text-[#2B7FFF] text-[10px] font-semibold tracking-[0.12em] py-3.5 rounded-full text-center transition-colors block">
+                    Logout
+                  </button>
+                </div>
               ) : (
                 <Link to="/login" onClick={() => setMobileMenuOpen(false)}
                   className="mt-8 w-full bg-[#0F172A] hover:bg-[#2B7FFF] text-white text-[10px] font-semibold tracking-[0.12em] py-3.5 rounded-full text-center transition-colors block">
@@ -575,7 +579,7 @@ export default function LandingPage() {
       <div className="bg-[#0F172A] py-4 overflow-hidden border-y border-slate-800">
         <motion.div animate={{ x: ["0%", "-50%"] }} transition={{ duration: 30, repeat: Infinity, ease: "linear" }} className="flex gap-12 whitespace-nowrap">
           {[...Array(4)].map((_, i) =>
-            ["Men's Fashion", "Women's Fashion", "Bags & Accessories", "Shoes Collection", "Lifestyle Essentials", "Free Delivery Available", "New Collection 2026"].map(t => (
+            ["BUIQ CRM Platform", "Omnichannel Retail Operations", "VIP Customer Profiling", "Real-Time Inventory Turn Tracking", "Expedited Order Management", "Direct Clienteling System"].map(t => (
               <span key={`${i}-${t}`} className="text-[9px] font-semibold tracking-[0.28em] uppercase text-slate-500">
                 {t} <span className="text-[#2B7FFF] mx-4">·</span>
               </span>
@@ -584,14 +588,150 @@ export default function LandingPage() {
         </motion.div>
       </div>
 
+      {/* ── Trust Statistics Section ────────────────────────────────────────── */}
+      <section className="bg-[#0b0f19] py-10 border-b border-slate-800/40">
+        <div className="max-w-7xl mx-auto px-6 md:px-12">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4 divide-y md:divide-y-0 md:divide-x divide-slate-800/60">
+            {[
+              { val: "1,200+", lbl: "Active Boutiques" },
+              { val: "150,000+", lbl: "VIP Customers" },
+              { val: "99.99%", lbl: "Platform Uptime" },
+              { val: "24/7", lbl: "Support Availability" }
+            ].map((stat, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: idx * 0.1 }}
+                className="flex flex-col items-center justify-center text-center px-4 pt-6 md:pt-0"
+              >
+                <span className="text-3xl md:text-4xl font-extrabold font-mono text-white tracking-tight">{stat.val}</span>
+                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mt-1">{stat.lbl}</span>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Trusted By Section ──────────────────────────────────────────────── */}
+      <section className="bg-[#0b0f19] py-8 border-b border-slate-800/40 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6 md:px-12 flex flex-col sm:flex-row items-center gap-6 sm:gap-12 justify-between">
+          <span className="text-[8px] font-bold tracking-[0.25em] uppercase text-slate-600 shrink-0">TRUSTED BY LEADING BRANDS</span>
+          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 opacity-45 grayscale contrast-200">
+            {["ZARA", "COS", "ZALORA", "MANGO", "UNIQLO"].map((logo) => (
+              <span key={logo} className="font-['Playfair_Display',serif] text-base md:text-lg font-bold tracking-[0.25em] text-white">
+                {logo}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+
+
+      {/* ── How BUIQ Works Section ──────────────────────────────────────────── */}
+      <section className="py-36 bg-white border-y border-slate-100">
+        <div className="max-w-7xl mx-auto px-6 md:px-12 text-center">
+          
+          <div className="max-w-3xl mx-auto space-y-4 mb-24">
+            <p className="text-[9px] font-semibold tracking-[0.3em] uppercase text-[#2B7FFF]">Workflow</p>
+            <h2 className="font-['Playfair_Display',serif] text-4xl md:text-5xl font-semibold text-[#0F172A] tracking-tight leading-tight">
+              Simple. Intelligent. Effective.
+            </h2>
+            <p className="text-sm text-slate-500 max-w-xl mx-auto leading-relaxed font-light">
+              Four streamlined steps to scale your store operations from chaotic spreadsheets to structured growth.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 relative text-left">
+            {/* Desktop timeline horizontal line */}
+            <div className="absolute top-[28px] left-[12%] right-[12%] h-[1px] bg-slate-100 hidden md:block z-0" />
+
+            {[
+              { num: "01", step: "Import Customers", desc: "Bulk-upload offline customer spreadsheets or sync your existing Shopify clients in minutes." },
+              { num: "02", step: "Manage Inventory", desc: "Set product styles, categories, sizing variants, pricing structures, and low-stock thresholds." },
+              { num: "03", step: "Track Sales", desc: "Log walk-in cash, credit card, and digital checkout events directly into our high-speed logger." },
+              { num: "04", step: "Grow Loyalty", desc: "Establish automated customer reward tiers and VIP membership status based on lifetime value (LTV)." }
+            ].map((item, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: idx * 0.1 }}
+                className="relative z-10 space-y-5 px-4 text-center md:text-left"
+              >
+                <div className="flex items-center justify-center md:justify-start">
+                  <span className="w-14 h-14 rounded-2xl bg-[#F8FAFC] border border-slate-100 flex items-center justify-center text-[#2B7FFF] font-mono text-lg font-bold shadow-sm">
+                    {item.num}
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  <h4 className="text-base font-bold text-[#0F172A] tracking-tight">{item.step}</h4>
+                  <p className="text-xs text-slate-500 leading-relaxed font-light">{item.desc}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+        </div>
+      </section>
+
+      {/* ── Why BUIQ Section (SaaS Value Proposition) ───────────────────────── */}
+      <section className="py-36 bg-[#F8FAFC] border-b border-slate-100">
+        <div className="max-w-7xl mx-auto px-6 md:px-12">
+          
+          <div className="max-w-3xl space-y-4 mb-24 text-center md:text-left">
+            <p className="text-[9px] font-semibold tracking-[0.3em] uppercase text-[#2B7FFF]">Why Choose BUIQ CRM</p>
+            <h2 className="font-['Playfair_Display',serif] text-4xl md:text-5xl font-semibold text-[#0F172A] tracking-tight leading-tight">
+              Designed for Modern Brand Commerce
+            </h2>
+            <p className="text-sm text-slate-500 max-w-xl leading-relaxed font-light">
+              BUIQ helps premium brands bridge checkout events, inventory turns, and VIP relations to run stores with data-driven confidence.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { icon: MdStyle, title: "Omnichannel Orders", desc: "Unify transactions from your retail boutiques and web stores into one real-time checkout stream." },
+              { icon: MdLayers, title: "Loyalty & Clienteling", desc: "Understand shopper preferences, sizes, and VIP status to customize service directly on the store floor." },
+              { icon: MdLocalOffer, title: "Smart Stock Planning", desc: "Avoid stockouts and overstock. Get smart alerts based on real-time sell-through velocity." },
+              { icon: MdHeadsetMic, title: "Actionable Insights", desc: "Gain visibility on top categories, customer average order values (AOV), and overall retail growth." }
+            ].map((card, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: idx * 0.08 }}
+                className="bg-white border border-slate-100 p-8 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col justify-between"
+              >
+                <div className="w-12 h-12 rounded-xl bg-[#2B7FFF]/5 border border-[#2B7FFF]/10 flex items-center justify-center text-[#2B7FFF] mb-6">
+                  <card.icon size={22} />
+                </div>
+                <div className="space-y-2 mt-auto">
+                  <h4 className="text-base font-bold text-[#0F172A] tracking-tight">{card.title}</h4>
+                  <p className="text-xs text-slate-500 leading-relaxed font-light">{card.desc}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+        </div>
+      </section>
+
       {/* ── Categories ──────────────────────────────────────────────────────── */}
-      <section id="categories" className="py-28 bg-white">
+      <section id="categories" className="py-36 bg-white">
         <div className="max-w-7xl mx-auto px-6 md:px-12">
 
           <div className="mb-16 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
             <div className="space-y-2">
-              <p className="text-[9px] font-semibold tracking-[0.3em] uppercase text-[#2B7FFF]">Our Range</p>
-              <h2 className="font-['Playfair_Display',serif] text-3xl md:text-4xl font-semibold text-[#0F172A] tracking-tight">Featured Categories</h2>
+              <p className="text-[9px] font-semibold tracking-[0.3em] uppercase text-[#2B7FFF]">Interactive Sandbox</p>
+              <h2 className="font-['Playfair_Display',serif] text-3xl md:text-4xl font-semibold text-[#0F172A] tracking-tight">Live Storefront Demo</h2>
+              <p className="text-xs text-slate-400 font-light mt-1 max-w-xl">
+                See how a BUIQ-powered online store syncs product categories, inventory changes, and customer transactions directly with the CRM console.
+              </p>
             </div>
             <button onClick={() => scrollToSection("catalog")} className="text-[10px] font-semibold tracking-widest uppercase text-slate-400 hover:text-[#2B7FFF] transition-colors flex items-center gap-2 group">
               View All <MdArrowForwardIos size={10} className="group-hover:translate-x-1 transition-transform" />
@@ -622,13 +762,16 @@ export default function LandingPage() {
       </section>
 
       {/* ── Catalog ─────────────────────────────────────────────────────────── */}
-      <section id="catalog" className="py-28 bg-[#F8FAFC] border-y border-slate-100">
+      <section id="catalog" className="py-36 bg-[#F8FAFC] border-y border-slate-100">
         <div className="max-w-7xl mx-auto px-6 md:px-12">
 
           <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-14 gap-8">
             <div className="space-y-2">
-              <p className="text-[9px] font-semibold tracking-[0.3em] uppercase text-[#2B7FFF]">Season Highlights</p>
-              <h2 className="font-['Playfair_Display',serif] text-3xl md:text-4xl font-semibold text-[#0F172A] tracking-tight">Featured Catalog</h2>
+              <p className="text-[9px] font-semibold tracking-[0.3em] uppercase text-[#2B7FFF]">BUIQ Engine Demo</p>
+              <h2 className="font-['Playfair_Display',serif] text-3xl md:text-4xl font-semibold text-[#0F172A] tracking-tight">Live Product Sandbox</h2>
+              <p className="text-xs text-slate-400 font-light mt-1 max-w-xl">
+                Add mock collection items to the shopping bag below to simulate customer purchase actions and view real-time data sync alerts.
+              </p>
             </div>
 
             {/* Filter tabs */}
@@ -683,21 +826,21 @@ export default function LandingPage() {
       </section>
 
       {/* ── Why BUIQ ────────────────────────────────────────────────────────── */}
-      <section id="why-us" className="py-28 bg-white">
+      <section id="why-us" className="py-36 bg-white">
         <div className="max-w-7xl mx-auto px-6 md:px-12">
 
           <div className="mb-16 max-w-xl">
-            <p className="text-[9px] font-semibold tracking-[0.3em] uppercase text-[#2B7FFF] mb-3">Our Pledge</p>
-            <h2 className="font-['Playfair_Display',serif] text-3xl md:text-4xl font-semibold text-[#0F172A] tracking-tight">Why choose BUIQ</h2>
+            <p className="text-[9px] font-semibold tracking-[0.3em] uppercase text-[#2B7FFF] mb-3">Core Pillars</p>
+            <h2 className="font-['Playfair_Display',serif] text-3xl md:text-4xl font-semibold text-[#0F172A] tracking-tight">Why Choose BUIQ</h2>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
             {[
-              { title: "Premium Materials",  desc: "Carefully sourced natural fiber blends built to endure daily use.",        icon: <MdLayers size={18} />        },
-              { title: "Transparent Pricing", desc: "Fair pricing that eliminates traditional retail markup.",                  icon: <MdLocalOffer size={18} />    },
-              { title: "Direct Support",      desc: "Human specialists available to assist with every order and inquiry.",     icon: <MdHeadsetMic size={18} />    },
-              { title: "Fast Logistics",      desc: "Secure packaging dispatched with expedited nationwide courier options.",  icon: <MdLocalShipping size={18} /> },
-              { title: "Modern Cuts",         desc: "Silhouettes updated each season to align with minimal daily aesthetics.", icon: <MdStyle size={18} />         },
+              { title: "Unified Platform",  desc: "Consolidate customer data, product catalogues, and checkout logs under one roof.", icon: <MdLayers size={18} />        },
+              { title: "Flexible Tiers",    desc: "Transparent pricing models tailored for boutique growth and enterprise scale.",        icon: <MdLocalOffer size={18} />    },
+              { title: "Dedicated Success", desc: "Direct channel support with CRM specialists to assist in system migration.",           icon: <MdHeadsetMic size={18} />    },
+              { title: "Expedited Syncing", desc: "High-speed webhook triggers to dispatch transaction data instantly between systems.",  icon: <MdLocalShipping size={18} /> },
+              { title: "Tailored UI",       desc: "Clean, minimal console design customized to fit boutique daily workflows.",           icon: <MdStyle size={18} />         },
             ].map((item, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-60px" }}
                 transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: i * 0.07 }}
@@ -720,12 +863,19 @@ export default function LandingPage() {
       {/* ── Testimonials ────────────────────────────────────────────────────── */}
       <section id="testimonials" className="py-28 bg-[#0F172A] overflow-hidden">
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <p className="text-[9px] font-semibold tracking-[0.3em] uppercase text-[#2B7FFF] mb-16">Editorial Reviews</p>
+          <p className="text-[9px] font-semibold tracking-[0.3em] uppercase text-[#2B7FFF] mb-12">Customer Testimonials</p>
 
-          <div className="min-h-[200px] flex flex-col justify-center">
+          <div className="min-h-[220px] flex flex-col justify-center">
             <AnimatePresence mode="wait">
               <motion.div key={currentTestimonial} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }} className="space-y-8">
+                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }} className="space-y-6">
+
+                {/* Star rating */}
+                <div className="flex items-center justify-center gap-0.5 text-amber-400">
+                  {[...Array(testimonials[currentTestimonial].rating || 5)].map((_, i) => (
+                    <MdStar key={i} size={14} />
+                  ))}
+                </div>
 
                 <blockquote className="font-['Playfair_Display',serif] text-xl md:text-2xl font-normal text-white/85 leading-relaxed italic max-w-2xl mx-auto">
                   "{testimonials[currentTestimonial].quote}"
@@ -736,7 +886,9 @@ export default function LandingPage() {
                     <img src={testimonials[currentTestimonial].avatar} alt="" className="w-full h-full object-cover object-[50%_22%]" />
                   </div>
                   <p className="text-[11px] font-semibold uppercase tracking-widest text-white">{testimonials[currentTestimonial].author}</p>
-                  <p className="text-[9px] font-medium tracking-[0.2em] uppercase text-[#2B7FFF]">{testimonials[currentTestimonial].role}</p>
+                  <p className="text-[9px] font-medium tracking-[0.2em] uppercase text-slate-500">
+                    {testimonials[currentTestimonial].role} · <span className="text-[#2B7FFF]">{testimonials[currentTestimonial].company}</span>
+                  </p>
                 </div>
               </motion.div>
             </AnimatePresence>
@@ -744,17 +896,17 @@ export default function LandingPage() {
 
           <div className="flex items-center justify-center gap-5 mt-12">
             <button onClick={() => setCurrentTestimonial(p => (p - 1 + testimonials.length) % testimonials.length)}
-              className="w-9 h-9 rounded-full border border-white/15 text-white/50 hover:border-white/50 hover:text-white flex items-center justify-center transition-all">
+              className="w-9 h-9 rounded-full border border-white/15 text-white/50 hover:border-white/50 hover:text-white flex items-center justify-center transition-all cursor-pointer">
               <MdArrowBackIos size={10} className="translate-x-[2px]" />
             </button>
             <div className="flex gap-2">
               {testimonials.map((_, i) => (
                 <button key={i} onClick={() => setCurrentTestimonial(i)}
-                  className={`h-0.5 rounded-full transition-all duration-400 ${currentTestimonial === i ? "bg-white w-6" : "bg-white/20 w-3"}`} />
+                  className={`h-0.5 rounded-full transition-all duration-400 cursor-pointer ${currentTestimonial === i ? "bg-white w-6" : "bg-white/20 w-3"}`} />
               ))}
             </div>
             <button onClick={() => setCurrentTestimonial(p => (p + 1) % testimonials.length)}
-              className="w-9 h-9 rounded-full border border-white/15 text-white/50 hover:border-white/50 hover:text-white flex items-center justify-center transition-all">
+              className="w-9 h-9 rounded-full border border-white/15 text-white/50 hover:border-white/50 hover:text-white flex items-center justify-center transition-all cursor-pointer">
               <MdArrowForwardIos size={10} />
             </button>
           </div>
@@ -762,7 +914,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── About ───────────────────────────────────────────────────────────── */}
-      <section id="about" className="py-28 bg-white border-y border-slate-100">
+      <section id="about" className="py-36 bg-white border-y border-slate-100">
         <div className="max-w-7xl mx-auto px-6 md:px-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
 
@@ -825,7 +977,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Contact ─────────────────────────────────────────────────────────── */}
-      <section id="contact" className="py-28 bg-[#F8FAFC]">
+      <section id="contact" className="py-36 bg-[#F8FAFC]">
         <div className="max-w-7xl mx-auto px-6 md:px-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-20 items-start">
 
@@ -899,50 +1051,137 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+      {/* ── Secondary CTA Section ────────────────────────────────────────────── */}
+      <section className="py-24 bg-[#0B0F19] text-center relative overflow-hidden border-t border-slate-800">
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/20 via-transparent to-transparent pointer-events-none" />
+        <div className="relative z-10 max-w-4xl mx-auto px-6 space-y-8">
+          <h2 className="font-['Playfair_Display',serif] text-4xl md:text-5xl font-normal text-white leading-tight tracking-tight">
+            Ready to Grow Your Fashion Business?
+          </h2>
+          <p className="text-sm text-slate-400 max-w-xl mx-auto leading-relaxed font-light font-sans">
+            Join leading fashion brands managing customer connections, inventory turns, and online/offline checkout transactions with BUIQ CRM.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
+            <Link to={isLoggedIn ? "/dashboard" : "/login"}
+              className="bg-[#2B7FFF] hover:bg-[#2B7FFF]/90 text-white text-[11px] font-semibold tracking-[0.12em] uppercase px-8 py-4 rounded-full transition-all duration-300 shadow-lg shadow-[#2B7FFF]/20">
+              {isLoggedIn ? "Access Dashboard" : "Launch CRM Portal"}
+            </Link>
+            <button onClick={() => scrollToSection("contact")}
+              className="border border-white/20 hover:border-white/50 text-white text-[11px] font-semibold tracking-[0.12em] uppercase px-8 py-4 rounded-full transition-all duration-300 backdrop-blur-sm cursor-pointer">
+              Contact Sales
+            </button>
+          </div>
+        </div>
+      </section>
 
       {/* ── Footer ──────────────────────────────────────────────────────────── */}
-      <footer className="bg-[#0F172A] text-slate-400 pt-20 pb-10">
+      <footer className="bg-[#0b0f19] text-slate-400 pt-24 pb-12 border-t border-slate-800/40">
         <div className="max-w-7xl mx-auto px-6 md:px-12">
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 pb-16 border-b border-slate-800">
-            <div className="md:col-span-1 space-y-5">
-              <span className="font-['Playfair_Display',serif] text-lg font-bold tracking-[0.22em] text-white">BUIQ</span>
-              <p className="text-[11px] leading-relaxed text-slate-500">
-                Premium wardrobe structures and lifestyle accessories. Est. Jakarta, Indonesia.
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 pb-16 border-b border-slate-800/60">
+            
+            {/* Brand Col */}
+            <div className="space-y-6">
+              <span className="font-['Playfair_Display',serif] text-xl font-bold tracking-[0.2em] text-white">BUIQ</span>
+              <p className="text-[11.5px] leading-relaxed text-slate-500 font-light font-sans">
+                Sleek CRM and clienteling operations for modern fashion and lifestyle brands. Empowers boutiques to run efficiently.
               </p>
-            </div>
-
-            <div className="space-y-5">
-              <h4 className="text-[9px] font-bold uppercase tracking-[0.28em] text-white">Collections</h4>
-              <div className="flex flex-col gap-2.5">
-                {navItems.map(item => (
-                  <button key={item.id} onClick={() => scrollToSection(item.id)}
-                    className="text-left text-[11px] text-slate-500 hover:text-white transition-colors tracking-wide">
-                    {item.label}
-                  </button>
+              <div className="flex gap-3 pt-2">
+                {[
+                  { icon: <FaInstagram size={14} />, url: "#" },
+                  { icon: <FaTiktok size={13} />, url: "#" },
+                  { icon: <FaFacebook size={14} />, url: "#" }
+                ].map((s, idx) => (
+                  <a key={idx} href={s.url} className="w-8 h-8 rounded-full border border-slate-800 bg-slate-900 flex items-center justify-center text-slate-400 hover:text-[#2B7FFF] hover:border-[#2B7FFF] transition-colors">
+                    {s.icon}
+                  </a>
                 ))}
               </div>
             </div>
 
+            {/* Product Links */}
             <div className="space-y-5">
-              <h4 className="text-[9px] font-bold uppercase tracking-[0.28em] text-white">Boutique Hours</h4>
-              <ul className="space-y-2.5 text-[11px] text-slate-500">
-                <li>Mon – Fri · 09:00 – 21:00</li>
-                <li>Sat – Sun · 10:00 – 22:00</li>
-                <li className="text-[#2B7FFF] font-medium">Online Store · Open 24/7</li>
+              <h4 className="text-[9px] font-bold uppercase tracking-[0.25em] text-white">Product</h4>
+              <ul className="space-y-3 text-[11px] text-slate-500 font-light font-sans">
+                <li>
+                  <Link to={isLoggedIn ? "/dashboard" : "/login"} className="hover:text-white transition-colors">
+                    CRM Dashboard
+                  </Link>
+                </li>
+                <li>
+                  <Link to={isLoggedIn ? "/dashboard" : "/login"} className="hover:text-white transition-colors">
+                    Member Loyalty
+                  </Link>
+                </li>
+                <li>
+                  <Link to={isLoggedIn ? "/dashboard" : "/login"} className="hover:text-white transition-colors">
+                    Inventory Control
+                  </Link>
+                </li>
+                <li>
+                  <Link to={isLoggedIn ? "/dashboard" : "/login"} className="hover:text-white transition-colors">
+                    Order Analytics
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/components" className="hover:text-white transition-colors">
+                    UI Component Library
+                  </Link>
+                </li>
               </ul>
             </div>
 
+            {/* Company Links */}
             <div className="space-y-5">
-              <h4 className="text-[9px] font-bold uppercase tracking-[0.28em] text-white">Staff Access</h4>
-              <p className="text-[11px] text-slate-500 leading-relaxed">Internal portal for inventory, orders, and client records.</p>
-              <Link to={isLoggedIn ? "/dashboard" : "/login"}
-                className="inline-block border border-[#2B7FFF]/40 hover:border-[#2B7FFF] text-[#2B7FFF] hover:bg-[#2B7FFF] hover:text-white text-[9px] font-semibold uppercase tracking-[0.2em] px-5 py-2.5 rounded-full transition-all duration-300">
-                {isLoggedIn ? "Go to Dashboard" : "Sign in to CRM"}
-              </Link>
+              <h4 className="text-[9px] font-bold uppercase tracking-[0.25em] text-white">Company</h4>
+              <ul className="space-y-3 text-[11px] text-slate-500 font-light font-sans">
+                <li>
+                  <button onClick={() => scrollToSection("about")} className="hover:text-white transition-colors text-left cursor-pointer">
+                    About Us
+                  </button>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white transition-colors">
+                    Careers
+                  </a>
+                </li>
+                <li>
+                  <Link to={isLoggedIn ? "/dashboard" : "/login"} className="hover:text-white transition-colors">
+                    Staff Portal
+                  </Link>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white transition-colors">
+                    Privacy Policy
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white transition-colors">
+                    Terms of Service
+                  </a>
+                </li>
+              </ul>
             </div>
+
+            {/* Contact Info */}
+            <div className="space-y-5">
+              <h4 className="text-[9px] font-bold uppercase tracking-[0.25em] text-white">Contact</h4>
+              <ul className="space-y-3.5 text-[11px] text-slate-500 font-light font-sans">
+                <li className="leading-relaxed">
+                  Jl. Fashion Avenue No. 42,<br />
+                  Kebayoran Baru, Jakarta, Indonesia
+                </li>
+                <li>
+                  support@buiqstore.com
+                </li>
+                <li>
+                  +62 21 555 1234
+                </li>
+              </ul>
+            </div>
+
           </div>
 
+          {/* Bottom Bar */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-10 text-[9px] font-medium tracking-[0.2em] uppercase text-slate-600">
             <p>© 2026 BUIQ Fashion & Lifestyle. All rights reserved.</p>
             <div className="flex gap-6">
@@ -950,6 +1189,7 @@ export default function LandingPage() {
               <a href="#" className="hover:text-slate-400 transition-colors">Terms of Service</a>
             </div>
           </div>
+
         </div>
       </footer>
     </div>
