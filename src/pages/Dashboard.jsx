@@ -8,11 +8,11 @@ const Ico = ({ d, size = 16 }) => (
     {Array.isArray(d) ? d.map((p, i) => <path key={i} d={p} />) : <path d={d} />}
   </svg>
 );
-const IWallet = () => <Ico d={["M21 7H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z","M16 3l-4 4-4-4"]} />;
-const ICard   = () => <Ico d={["M21 4H3a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z","M1 10h22"]} />;
-const IShirt  = () => <Ico d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z" />;
-const ILamp   = () => <Ico d={["M9 18h6","M12 2l-4 8h8l-4-8z","M12 10v8"]} />;
-const IBall   = () => <Ico d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z M2.1 12h19.8 M12 2c-4 6-4 14 0 20 M12 2c4 6 4 14 0 20" />;
+const IWallet = () => <Ico d={["M21 7H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z", "M16 3l-4 4-4-4"]} />;
+const ICard = () => <Ico d={["M21 4H3a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z", "M1 10h22"]} />;
+const IShirt = () => <Ico d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z" />;
+const ILamp = () => <Ico d={["M9 18h6", "M12 2l-4 8h8l-4-8z", "M12 10v8"]} />;
+const IBall = () => <Ico d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z M2.1 12h19.8 M12 2c-4 6-4 14 0 20 M12 2c4 6 4 14 0 20" />;
 
 // ─── Initial Fallback Data Generators ──────────────────────────────────────────
 const generateOrders = () => {
@@ -126,7 +126,7 @@ const generateMembers = () => {
     const status = statuses[i % 3];
     const monthStr = String(Math.floor(1 + ((i - 1) % 6))).padStart(2, "0");
     const dayStr = String(1 + (i * 3) % 27).padStart(2, "0");
-    
+
     members.push({
       memberId: `MEM-${String(i).padStart(4, "0")}`,
       fullName: name,
@@ -168,12 +168,16 @@ function Sparkline({ data, color, height = 50 }) {
     type: "line",
     data: {
       labels: data.map((_, i) => i),
-      datasets: [{ data, borderColor: color, borderWidth: 1.5, pointRadius: 0,
-        fill: "origin", backgroundColor: color + "15", tension: 0.4 }],
+      datasets: [{
+        data, borderColor: color, borderWidth: 1.5, pointRadius: 0,
+        fill: "origin", backgroundColor: color + "15", tension: 0.4
+      }],
     },
-    options: { responsive: true, maintainAspectRatio: false,
+    options: {
+      responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false }, tooltip: { enabled: false } },
-      scales: { x: { display: false }, y: { display: false } } },
+      scales: { x: { display: false }, y: { display: false } }
+    },
   }), [data]);
   return <div style={{ position: "relative", height }}><canvas ref={ref} /></div>;
 }
@@ -213,11 +217,12 @@ function RevenueBarChart({ monthlyData }) {
         { label: "Revenue (Rp)", data: monthlyData, backgroundColor: "#2B7FFF", borderRadius: 4, barPercentage: 0.45 },
       ],
     },
-    options: { responsive: true, maintainAspectRatio: false,
+    options: {
+      responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
         x: { ticks: { color: "#94a3b8", font: { size: 10 } }, grid: { display: false }, border: { display: false } },
-        y: { ticks: { color: "#94a3b8", font: { size: 10 }, callback: v => "Rp " + Math.round(v/1000) + "k" }, grid: { color: "#f1f5f9" }, border: { display: false } },
+        y: { ticks: { color: "#94a3b8", font: { size: 10 }, callback: v => "Rp " + Math.round(v / 1000) + "k" }, grid: { color: "#f1f5f9" }, border: { display: false } },
       },
     },
   }), [monthlyData]);
@@ -369,7 +374,7 @@ export default function AnalyticsDashboard() {
     const total = members.length;
     const vip = members.filter((m) => m.membershipType === "VIP").length;
     const newThisMonth = members.filter((m) => m.joinDate && m.joinDate.startsWith("2026-06")).length;
-    
+
     const juneCount = members.filter((m) => m.joinDate && m.joinDate.startsWith("2026-06")).length;
     const mayCount = members.filter((m) => m.joinDate && m.joinDate.startsWith("2026-05")).length;
     const growthVal = mayCount === 0 ? juneCount * 100 : Math.round(((juneCount - mayCount) / mayCount) * 100);
@@ -484,8 +489,8 @@ export default function AnalyticsDashboard() {
         <p className="text-xs font-bold text-slate-800 tracking-wider uppercase">Boutique Categories</p>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {categoryStats.map((cat, i) => (
-            <div 
-              key={i} 
+            <div
+              key={i}
               className="buiq-card buiq-card-hover group cursor-pointer flex flex-col justify-between aspect-[4/3] p-5 border border-slate-200/80 bg-white hover:border-primary/25 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300"
             >
               <div className={`w-8 h-8 rounded-xl ${cat.bg} ${cat.tc} flex items-center justify-center font-bold text-xs`}>
@@ -564,10 +569,10 @@ export default function AnalyticsDashboard() {
             <span className="text-[10px] text-slate-400 font-medium">Actual Segment</span>
           </div>
           <div className="relative flex items-center justify-center my-3">
-            <CustomerStatusDonutChart 
-              active={customersStats.active} 
-              vip={customersStats.vip} 
-              inactive={customersStats.inactive} 
+            <CustomerStatusDonutChart
+              active={customersStats.active}
+              vip={customersStats.vip}
+              inactive={customersStats.inactive}
             />
             <div className="absolute text-center">
               <p className="text-xl font-black text-slate-800">{customersStats.total}</p>
@@ -597,7 +602,7 @@ export default function AnalyticsDashboard() {
           <p className="text-xs font-bold text-slate-800 tracking-wider uppercase">Member & Loyalty Overview</p>
           <span className="text-[10px] text-slate-400 font-bold uppercase">Dynamic CRM Sync</span>
         </div>
-        
+
         {/* Member Widgets */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
@@ -654,8 +659,8 @@ export default function AnalyticsDashboard() {
                 Kelola status keanggotaan dan peningkatan tingkat (tiering) pelanggan loyal secara instan untuk melacak valuasi belanja butik dan retensi pelanggan.
               </p>
             </div>
-            <Link 
-              to="/member-management" 
+            <Link
+              to="/member-management"
               className="mt-6 w-full text-center py-2.5 bg-white text-primary font-bold text-xs rounded-xl shadow-lg shadow-primary-hover/10 hover:shadow-xl transition-all cursor-pointer block"
             >
               Kelola Member
@@ -683,9 +688,8 @@ export default function AnalyticsDashboard() {
                 </div>
                 <div className="text-right flex flex-col items-end gap-1">
                   <p className="font-bold text-primary">Rp {o.totalPrice.toLocaleString()}</p>
-                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider ${
-                    o.status === "Completed" ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : o.status === "Pending" ? "bg-amber-50 text-amber-700 border border-amber-100" : "bg-rose-50 text-rose-700 border border-rose-100"
-                  }`}>{o.status}</span>
+                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider ${o.status === "Completed" ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : o.status === "Pending" ? "bg-amber-50 text-amber-700 border border-amber-100" : "bg-rose-50 text-rose-700 border border-rose-100"
+                    }`}>{o.status}</span>
                 </div>
               </div>
             ))}
@@ -711,9 +715,8 @@ export default function AnalyticsDashboard() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    p.stock === 0 ? "bg-rose-50 text-rose-600" : "bg-amber-50 text-amber-600"
-                  }`}>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${p.stock === 0 ? "bg-rose-50 text-rose-600" : "bg-amber-50 text-amber-600"
+                    }`}>
                     {p.stock} pcs left
                   </span>
                 </div>

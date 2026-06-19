@@ -8,11 +8,21 @@ export default function Login() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [loginRole, setLoginRole] = useState("admin"); // 'admin' or 'member'
 
   const [dataForm, setDataForm] = useState({
-    email: "",
-    password: "",
+    email: "emilys",
+    password: "emilyspass",
   });
+
+  const handleRoleChange = (role) => {
+    setLoginRole(role);
+    if (role === "admin") {
+      setDataForm({ email: "emilys", password: "emilyspass" });
+    } else {
+      setDataForm({ email: "member", password: "member123" });
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -27,16 +37,74 @@ export default function Login() {
     setLoading(true);
     setError("");
 
+    const username = dataForm.email.trim();
+    const password = dataForm.password.trim();
+
+    // 1. Check for specific Admin Account
+    if (loginRole === "admin" && username === "emilys" && password === "emilyspass") {
+      setTimeout(() => {
+        const userObj = {
+          id: 1,
+          username: "emilys",
+          email: "emily.johnson@x.dummyjson.com",
+          firstName: "Emily",
+          lastName: "Johnson",
+          gender: "female",
+          image: "https://dummyjson.com/icon/emilys/128",
+          role: "admin",
+          token: "mock-admin-token"
+        };
+        localStorage.setItem("buiq_token", userObj.token);
+        localStorage.setItem("buiq_user", JSON.stringify(userObj));
+        setLoading(false);
+        navigate("/dashboard");
+      }, 500);
+      return;
+    }
+
+    // 2. Check for specific Member Account
+    if (loginRole === "member" && username === "member" && password === "member123") {
+      setTimeout(() => {
+        const userObj = {
+          id: 999,
+          username: "member",
+          email: "member@buiq.com",
+          firstName: "Sarah",
+          lastName: "Miller",
+          gender: "female",
+          image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop",
+          role: "member",
+          token: "mock-member-token"
+        };
+        localStorage.setItem("buiq_token", userObj.token);
+        localStorage.setItem("buiq_user", JSON.stringify(userObj));
+        setLoading(false);
+        navigate("/member-dashboard");
+      }, 500);
+      return;
+    }
+
+    // 3. Fallback to API for general testing
     axios
       .post("https://dummyjson.com/user/login", {
-        username: dataForm.email,
-        password: dataForm.password,
+        username: username,
+        password: password,
       })
       .then((response) => {
         if (response.status === 200) {
-          localStorage.setItem("buiq_token", response.data.token);
-          localStorage.setItem("buiq_user", JSON.stringify(response.data));
-          navigate("/dashboard");
+          const token = response.data.token || response.data.accessToken;
+          const userObj = {
+            ...response.data,
+            token: token,
+            role: loginRole
+          };
+          localStorage.setItem("buiq_token", token);
+          localStorage.setItem("buiq_user", JSON.stringify(userObj));
+          if (loginRole === "admin") {
+            navigate("/dashboard");
+          } else {
+            navigate("/member-dashboard");
+          }
         }
       })
       .catch((err) => {
@@ -52,9 +120,37 @@ export default function Login() {
       {/* Title */}
       <div>
         <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Selamat Datang Kembali</h1>
-        <p className="text-xs text-slate-500 mt-1.5">
-          Silakan masuk ke akun BUIQ Anda untuk mulai mengelola boutique.
+        <p className="text-xs text-slate-500 mt-1.5 font-medium">
+          {loginRole === "admin"
+            ? "Silakan masuk ke akun BUIQ Anda untuk mulai mengelola boutique."
+            : "Silakan masuk ke akun member Anda untuk melihat loyalty & fashion reward."}
         </p>
+      </div>
+
+      {/* Role Selection Tabs */}
+      <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200/40">
+        <button
+          type="button"
+          onClick={() => handleRoleChange("admin")}
+          className={`flex-1 py-2 text-center text-xs font-bold rounded-lg transition-all cursor-pointer ${
+            loginRole === "admin"
+              ? "bg-[#2B7FFF] text-white shadow-sm"
+              : "text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          Admin Portal
+        </button>
+        <button
+          type="button"
+          onClick={() => handleRoleChange("member")}
+          className={`flex-1 py-2 text-center text-xs font-bold rounded-lg transition-all cursor-pointer ${
+            loginRole === "member"
+              ? "bg-[#2B7FFF] text-white shadow-sm"
+              : "text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          Member Loyalty Portal
+        </button>
       </div>
 
       {/* Error Message */}
@@ -72,8 +168,8 @@ export default function Login() {
           <input
             type="text"
             name="email"
-            placeholder="Contoh: emilys"
-            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary text-xs outline-none transition-all placeholder:text-slate-400"
+            placeholder={loginRole === "admin" ? "Contoh: emilys" : "Contoh: member"}
+            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary text-xs outline-none transition-all placeholder:text-slate-400 font-semibold"
             value={dataForm.email}
             onChange={handleChange}
             required

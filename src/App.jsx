@@ -36,12 +36,22 @@ const MemberDetail = React.lazy(() =>
 
 const Login = React.lazy(() => import("./pages/auth/login"));
 const LandingPage = React.lazy(() => import("./pages/LandingPage"));
+const MemberDashboard = React.lazy(() => import("./pages/MemberDashboard"));
 
 // ROOT RESOLVER
 const RootResolver = () => {
   const token = localStorage.getItem("buiq_token");
-  if (token) {
-    return <Navigate to="/dashboard" replace />;
+  const userStr = localStorage.getItem("buiq_user");
+  if (token && userStr) {
+    try {
+      const user = JSON.parse(userStr);
+      if (user.role === "member") {
+        return <Navigate to="/member-dashboard" replace />;
+      }
+      return <Navigate to="/dashboard" replace />;
+    } catch (e) {
+      // Ignore
+    }
   }
   return <LandingPage />;
 };
@@ -87,7 +97,7 @@ function App() {
       <Routes>
 
         {/* PUBLIC ROOT ROUTE */}
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<RootResolver />} />
 
         {/* MAIN LAYOUT */}
         <Route element={<MainLayout />}>
@@ -103,7 +113,7 @@ function App() {
             path="/products-management"
             element={<ProductsManagement />}
           />
-  
+
           <Route
             path="/components"
             element={<Components />}
@@ -149,6 +159,12 @@ function App() {
           <Route path="*" element={<NotFound />} />
 
         </Route>
+        
+        {/* MEMBER DASHBOARD */}
+        <Route
+          path="/member-dashboard"
+          element={<MemberDashboard />}
+        />
 
         {/* AUTH LAYOUT */}
         <Route element={<AuthLayout />}>

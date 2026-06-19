@@ -21,9 +21,9 @@ export default function MainLayout() {
 
       {/* Mobile Drawer Backdrop */}
       {isMobileOpen && (
-        <div 
-          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 lg:hidden transition-opacity duration-300" 
-          onClick={() => setMobileOpen(false)} 
+        <div
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 lg:hidden transition-opacity duration-300"
+          onClick={() => setMobileOpen(false)}
         />
       )}
 
@@ -34,10 +34,10 @@ export default function MainLayout() {
 
       {/* Main Content Pane */}
       <div id="main-content" className="flex-1 min-w-0 flex flex-col h-screen overflow-y-auto p-4 md:p-6">
-        <Header 
-          setMobileOpen={setMobileOpen} 
-          isCollapsed={isCollapsed} 
-          setCollapsed={setCollapsed} 
+        <Header
+          setMobileOpen={setMobileOpen}
+          isCollapsed={isCollapsed}
+          setCollapsed={setCollapsed}
         />
         <div className="flex-1 mt-2">
           <Outlet />

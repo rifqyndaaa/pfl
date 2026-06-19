@@ -76,10 +76,10 @@ export default function Header({ setMobileOpen, isCollapsed, setCollapsed }) {
       </style>
 
       <header className="flex justify-between items-center px-4 md:px-8 py-4 bg-white/70 backdrop-blur-md border border-slate-200/80 rounded-2xl shadow-sm mb-6 sticky top-4 z-40 transition-all">
-        
+
         <div className="flex items-center gap-3">
           {/* Mobile hamburger menu toggle */}
-          <button 
+          <button
             onClick={() => setMobileOpen(true)}
             className="lg:hidden p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-xl transition-all active:scale-95 cursor-pointer"
             title="Open Menu"
@@ -88,7 +88,7 @@ export default function Header({ setMobileOpen, isCollapsed, setCollapsed }) {
           </button>
 
           {/* Desktop sidebar collapse toggle */}
-          <button 
+          <button
             onClick={() => setCollapsed(!isCollapsed)}
             className="hidden lg:flex p-2 text-slate-400 hover:text-slate-850 hover:bg-slate-50 rounded-xl transition-all active:scale-90 cursor-pointer"
             title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
@@ -109,8 +109,8 @@ export default function Header({ setMobileOpen, isCollapsed, setCollapsed }) {
         </div>
 
         <div className="flex items-center gap-3">
-          
-          <button 
+
+          <button
             onClick={() => setOpenSearch(true)}
             className="flex items-center gap-3 px-3 py-2 bg-slate-50 hover:bg-slate-100 rounded-xl text-slate-400 transition-all border border-transparent hover:border-slate-200 group cursor-pointer"
           >
@@ -132,7 +132,7 @@ export default function Header({ setMobileOpen, isCollapsed, setCollapsed }) {
             ))}
 
             <div className="relative">
-              <button 
+              <button
                 onClick={() => setOpenNotif(!openNotif)}
                 className={`p-2 rounded-xl transition-all active:scale-95 cursor-pointer ${openNotif ? 'bg-primary-light text-primary' : 'hover:bg-slate-50 text-slate-500'}`}
               >
@@ -160,7 +160,7 @@ export default function Header({ setMobileOpen, isCollapsed, setCollapsed }) {
               )}
             </div>
 
-            <button 
+            <button
               onClick={() => setOpenSettings(true)}
               className="p-2 hover:bg-slate-50 rounded-xl text-slate-500 transition-all hover:rotate-45 cursor-pointer"
             >
@@ -227,9 +227,9 @@ export default function Header({ setMobileOpen, isCollapsed, setCollapsed }) {
             <div className="w-12 h-12 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-center mx-auto mb-4 text-xl">⚙️</div>
             <h2 className="text-sm font-bold text-slate-800 mb-1">Preferences</h2>
             <p className="text-slate-450 text-[10px] mb-6">Personalize your workspace</p>
-            
+
             <div className="space-y-4">
-              <button 
+              <button
                 onClick={() => setDarkMode(!darkMode)}
                 className={`w-full p-3.5 rounded-2xl border-2 transition-all flex items-center justify-between cursor-pointer ${darkMode ? 'border-primary bg-primary-light/50 text-primary' : 'border-slate-100'}`}
               >
@@ -238,11 +238,11 @@ export default function Header({ setMobileOpen, isCollapsed, setCollapsed }) {
                   <span className="font-bold text-slate-700 text-xs">Dark Appearance</span>
                 </div>
                 <div className={`w-9 h-5 rounded-full relative transition-all ${darkMode ? 'bg-primary' : 'bg-slate-200'}`}>
-                    <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${darkMode ? 'left-4.5' : 'left-0.5'}`}></div>
+                  <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${darkMode ? 'left-4.5' : 'left-0.5'}`}></div>
                 </div>
               </button>
 
-              <button 
+              <button
                 onClick={() => setOpenSettings(false)}
                 className="w-full bg-primary hover:bg-primary-hover text-white py-3 rounded-xl font-bold transition-all shadow-md shadow-primary/10 text-xs cursor-pointer"
               >
