@@ -5,6 +5,8 @@ import MainLayout from "./layouts/MainLayout";
 import AuthLayout from "./layouts/AuthLayout";
 import ErrorPage from "./components/ErrorPage";
 import Loading from "./components/Loading";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 // LAZY LOAD PAGES
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
@@ -34,27 +36,28 @@ const MemberDetail = React.lazy(() =>
   import("./pages/MemberDetail")
 );
 
-const Login = React.lazy(() => import("./pages/auth/login"));
+const Login = React.lazy(() => import("./pages/auth/Login"));
+const Logout = React.lazy(() => import("./pages/auth/Logout"));
 const LandingPage = React.lazy(() => import("./pages/LandingPage"));
 const MemberDashboard = React.lazy(() => import("./pages/MemberDashboard"));
 
 // ROOT RESOLVER
 const RootResolver = () => {
-  const token = localStorage.getItem("buiq_token");
-  const userStr = localStorage.getItem("buiq_user");
-  if (token && userStr) {
-    try {
-      const user = JSON.parse(userStr);
-      if (user.role === "member") {
-        return <Navigate to="/member-dashboard" replace />;
-      }
-      return <Navigate to="/dashboard" replace />;
-    } catch (e) {
-      // Ignore
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <Loading />;
+  }
+
+  if (user) {
+    if (user.role === "member") {
+      return <Navigate to="/member-dashboard" replace />;
     }
+    return <Navigate to="/dashboard" replace />;
   }
   return <LandingPage />;
 };
+
 const Register = React.lazy(() => import("./pages/auth/Register"));
 const Forgot = React.lazy(() => import("./pages/auth/Forgot"));
 
@@ -93,101 +96,115 @@ const NotFound = () => (
 
 function App() {
   return (
-    <Suspense fallback={<Loading />}>
-      <Routes>
+    <AuthProvider>
+      <Suspense fallback={<Loading />}>
+        <Routes>
 
-        {/* PUBLIC ROOT ROUTE */}
-        <Route path="/" element={<RootResolver />} />
+          {/* PUBLIC ROOT ROUTE */}
+          <Route path="/" element={<RootResolver />} />
 
-        {/* MAIN LAYOUT */}
-        <Route element={<MainLayout />}>
+          {/* MAIN LAYOUT (ADMIN ROUTES) */}
+          <Route element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <MainLayout />
+            </ProtectedRoute>
+          }>
+            <Route path="/dashboard" element={<Dashboard />} />
 
-          <Route path="/dashboard" element={<Dashboard />} />
+            <Route
+              path="/orders"
+              element={<Orders />}
+            />
 
+            <Route
+              path="/products-management"
+              element={<ProductsManagement />}
+            />
+
+            <Route
+              path="/components"
+              element={<Components />}
+            />
+
+            <Route
+              path="/customer-management"
+              element={<CustomerManagement />}
+            />
+
+            <Route
+              path="/about"
+              element={<About />}
+            />
+
+            <Route
+              path="/member-management"
+              element={<MemberManagement />}
+            />
+
+            <Route
+              path="/member-management/:id"
+              element={<MemberDetail />}
+            />
+
+            {/* ERROR PAGES */}
+            <Route
+              path="/error-400"
+              element={<Error400 />}
+            />
+
+            <Route
+              path="/error-401"
+              element={<Error401 />}
+            />
+
+            <Route
+              path="/error-403"
+              element={<Error403 />}
+            />
+
+            {/* 404 */}
+            <Route path="*" element={<NotFound />} />
+
+          </Route>
+          
+          {/* MEMBER DASHBOARD */}
           <Route
-            path="/orders"
-            element={<Orders />}
+            path="/member-dashboard"
+            element={
+              <ProtectedRoute allowedRoles={["member"]}>
+                <MemberDashboard />
+              </ProtectedRoute>
+            }
           />
 
-          <Route
-            path="/products-management"
-            element={<ProductsManagement />}
-          />
+          {/* AUTH LAYOUT */}
+          <Route element={<AuthLayout />}>
 
-          <Route
-            path="/components"
-            element={<Components />}
-          />
+            <Route
+              path="/login"
+              element={<Login />}
+            />
 
-          <Route
-            path="/customer-management"
-            element={<CustomerManagement />}
-          />
+            <Route
+              path="/register"
+              element={<Register />}
+            />
 
-          <Route
-            path="/about"
-            element={<About />}
-          />
+            <Route
+              path="/forgot"
+              element={<Forgot />}
+            />
 
-          <Route
-            path="/member-management"
-            element={<MemberManagement />}
-          />
+            <Route
+              path="/logout"
+              element={<Logout />}
+            />
 
-          <Route
-            path="/member-management/:id"
-            element={<MemberDetail />}
-          />
+          </Route>
 
-          {/* ERROR PAGES */}
-          <Route
-            path="/error-400"
-            element={<Error400 />}
-          />
-
-          <Route
-            path="/error-401"
-            element={<Error401 />}
-          />
-
-          <Route
-            path="/error-403"
-            element={<Error403 />}
-          />
-
-          {/* 404 */}
-          <Route path="*" element={<NotFound />} />
-
-        </Route>
-        
-        {/* MEMBER DASHBOARD */}
-        <Route
-          path="/member-dashboard"
-          element={<MemberDashboard />}
-        />
-
-        {/* AUTH LAYOUT */}
-        <Route element={<AuthLayout />}>
-
-          <Route
-            path="/login"
-            element={<Login />}
-          />
-
-          <Route
-            path="/register"
-            element={<Register />}
-          />
-
-          <Route
-            path="/forgot"
-            element={<Forgot />}
-          />
-
-        </Route>
-
-      </Routes>
-    </Suspense>
+        </Routes>
+      </Suspense>
+    </AuthProvider>
   );
 }
 

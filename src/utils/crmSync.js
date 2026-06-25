@@ -67,8 +67,8 @@ export function syncCrmAndLoyalty() {
   if (currentUserStr) {
     const currentUser = JSON.parse(currentUserStr);
     if (currentUser.role === "member" || currentUser.role === "admin") {
-      const email = currentUser.email || (currentUser.role === "admin" ? "emily.johnson@x.dummyjson.com" : "member@buiq.com");
-      const name = currentUser.role === "admin" ? "Emily Johnson" : `${currentUser.firstName || "Sarah"} ${currentUser.lastName || "Miller"}`;
+      const email = currentUser.email;
+      const name = currentUser.full_name || `${currentUser.firstName || ""} ${currentUser.lastName || ""}`.trim() || "User";
 
       // Check customer
       let custIndex = customers.findIndex(c => c.email.toLowerCase() === email.toLowerCase());

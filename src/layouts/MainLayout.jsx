@@ -2,13 +2,25 @@ import { useState } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
+import { useAuth } from "../context/AuthContext";
 
 export default function MainLayout() {
   const [isCollapsed, setCollapsed] = useState(false);
   const [isMobileOpen, setMobileOpen] = useState(false);
+  const { user, loading } = useAuth();
 
-  const token = localStorage.getItem("buiq_token");
-  if (!token) {
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-xs font-semibold text-slate-500">Loading App Layout...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
 

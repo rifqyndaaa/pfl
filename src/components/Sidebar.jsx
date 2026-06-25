@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import {
   MdDashboard,
   MdStore,
@@ -48,14 +49,17 @@ const menuItems = [
 
 export default function Sidebar({ isCollapsed, isMobile, setMobileOpen }) {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const handleLogout = () => {
-    localStorage.removeItem("buiq_token");
-    localStorage.removeItem("buiq_user");
-    sessionStorage.clear();
-    setShowLogoutModal(false);
-    navigate("/");
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setShowLogoutModal(false);
+      navigate("/login");
+    } catch (err) {
+      console.error("Sidebar logout error:", err);
+    }
   };
 
   const menuClass = ({ isActive }) =>
@@ -126,7 +130,7 @@ export default function Sidebar({ isCollapsed, isMobile, setMobileOpen }) {
         }`}>
           <button 
             onClick={() => setShowLogoutModal(true)}
-            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-rose-50/60 hover:text-rose-600 transition-all cursor-pointer ${
+            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-650 hover:bg-rose-50/60 hover:text-rose-600 transition-all cursor-pointer ${
               isCollapsed ? "justify-center w-10 h-10 px-0" : "w-full"
             }`}
             title={isCollapsed ? "Logout" : undefined}
@@ -137,7 +141,7 @@ export default function Sidebar({ isCollapsed, isMobile, setMobileOpen }) {
           {!isCollapsed && (
             <p className="text-[8px] text-slate-400 font-bold text-center mt-4 tracking-widest uppercase">
               BUIQ v.1.0.0
-              </p>
+            </p>
           )}
         </div>
       </aside>

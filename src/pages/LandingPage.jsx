@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   MdShoppingBag,
@@ -105,14 +106,16 @@ export default function LandingPage() {
   const [isTyping,           setIsTyping          ] = useState(false);
   const [videoError,         setVideoError        ] = useState(false);
 
-  const isLoggedIn = !!localStorage.getItem("buiq_token");
+  const { user, logout } = useAuth();
+  const isLoggedIn = !!user;
 
-  const handleLogout = () => {
-    localStorage.removeItem("buiq_token");
-    localStorage.removeItem("buiq_user");
-    sessionStorage.clear();
-    setMobileMenuOpen(false);
-    window.location.reload();
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setMobileMenuOpen(false);
+    } catch (err) {
+      console.error("LandingPage logout error:", err);
+    }
   };
 
   const chatEndRef = useRef(null);

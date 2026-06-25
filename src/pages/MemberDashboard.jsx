@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import { syncCrmAndLoyalty, getWishlist } from "../utils/crmSync";
 import {
   FaCrown,
@@ -22,6 +23,7 @@ import {
 
 export default function MemberDashboard() {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [currentUser, setCurrentUser] = useState(null);
   const [memberProfile, setMemberProfile] = useState(null);
   const [memberOrders, setMemberOrders] = useState([]);
@@ -45,14 +47,11 @@ export default function MemberDashboard() {
 
   useEffect(() => {
     // 1. Check Auth
-    const token = localStorage.getItem("buiq_token");
-    const userStr = localStorage.getItem("buiq_user");
-    if (!token || !userStr) {
+    if (!user) {
       navigate("/login");
       return;
     }
 
-    const user = JSON.parse(userStr);
     setCurrentUser(user);
 
     // 2. Synchronize CRM & Loyalty Databases
@@ -79,7 +78,7 @@ export default function MemberDashboard() {
         birthday: profile.birthday || "1998-08-20"
       });
     }
-  }, [navigate]);
+  }, [navigate, user]);
 
   // Derived Fashion Preferences
   const preferences = useMemo(() => {
@@ -160,10 +159,13 @@ export default function MemberDashboard() {
     return { progress, nextTier, nextThreshold, currentThreshold, computedPoints, multiplier };
   }, [memberProfile]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("buiq_token");
-    localStorage.removeItem("buiq_user");
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/login");
+    } catch (err) {
+      console.error("MemberDashboard logout error:", err);
+    }
   };
 
   const handleCopyReferral = () => {
