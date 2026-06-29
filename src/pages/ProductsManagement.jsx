@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import Card from "../components/Card";
+import { useProducts } from "../hooks/useProducts";
 import {
   FaBoxOpen,
   FaSearch,
@@ -10,50 +11,24 @@ import {
   FaTimesCircle,
   FaTags,
   FaArrowUp,
-  FaEye,
   FaBoxes,
+  FaEdit,
+  FaTrash,
 } from "react-icons/fa";
-
-const generateProducts = () => {
-  const categories = ["Dress", "Shoes", "Bag", "Accessories", "Outer"];
-  const statuses = ["Available", "Low Stock", "Out of Stock"];
-  const names = [
-    "Silk Dress", "Nike Sneakers", "Leather Bag", "Oversized Hoodie",
-    "Classic Watch", "Cargo Pants", "Denim Jacket", "Canvas Shoes"
-  ];
-  const images = [
-    "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=200",
-    "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=200",
-    "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=200",
-    "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=200",
-  ];
-
-  const products = [];
-  for (let i = 1; i <= 30; i++) {
-    products.push({
-      productId: i,
-      productName: names[i % names.length],
-      category: categories[i % categories.length],
-      status: statuses[i % 3],
-      stock: Math.floor(5 + Math.random() * 80),
-      price: Math.floor(100000 + Math.random() * 1500000),
-      image: images[i % images.length],
-      sku: `PRD-${String(i).padStart(4, "0")}`,
-    });
-  }
-  return products;
-};
-
-const initialProducts = generateProducts();
+import { ImSpinner2 } from "react-icons/im";
 
 export default function ProductsManagement() {
-  const [products, setProducts] = useState(() => {
-    const stored = localStorage.getItem("buiq_products");
-    if (stored) return JSON.parse(stored);
-    localStorage.setItem("buiq_products", JSON.stringify(initialProducts));
-    return initialProducts;
-  });
+  const {
+    products,
+    loading,
+    error,
+    addProduct,
+    updateProduct,
+    deleteProduct
+  } = useProducts();
+
   const [showModal, setShowModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
@@ -61,76 +36,131 @@ export default function ProductsManagement() {
     productName: "",
     category: "Dress",
     status: "Available",
-    stock: "",
-    price: "",
-    imageUrl: "",
+    stock: "0",
+    price: "0",
+    imageUrl: ""
   });
 
-  const filteredProducts = products.filter((p) => {
-    const matchesSearch =
-      p.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.sku.toLowerCase().includes(searchTerm.toLowerCase());
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const matchesCategory = selectedCategory === "All" || p.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredProducts = useMemo(() => {
+    return products.filter((p) => {
+      const nameMatch = p.product_name?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
+      const codeMatch = p.product_code?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
+
+      const matchesSearch = nameMatch || codeMatch;
+      const matchesCategory = selectedCategory === "All" || p.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [products, searchTerm, selectedCategory]);
 
   const stats = useMemo(() => {
+    const totalRevenue = products.reduce((sum, p) => sum + parseFloat(p.price || 0) * parseInt(p.stock || 0), 0);
     return {
       total: products.length,
       available: products.filter((p) => p.status === "Available").length,
       lowStock: products.filter((p) => p.status === "Low Stock").length,
       outStock: products.filter((p) => p.status === "Out of Stock").length,
-      revenue: products.reduce((sum, p) => sum + p.price, 0),
+      revenue: totalRevenue,
     };
   }, [products]);
 
-  const handleAddProduct = () => {
-    if (!formData.productName || !formData.price || !formData.stock) {
-      alert("Harap isi semua field!");
-      return;
-    }
-
-    const newProduct = {
-      productId: products.length > 0 ? Math.max(...products.map((p) => p.productId)) + 1 : 1,
-      sku: `PRD-${String(products.length + 1).padStart(4, "0")}`,
-      image: formData.imageUrl || "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=200",
-      productName: formData.productName,
-      category: formData.category,
-      status: formData.status,
-      stock: parseInt(formData.stock),
-      price: parseInt(formData.price),
-    };
-
-    const updated = [newProduct, ...products];
-    setProducts(updated);
-    localStorage.setItem("buiq_products", JSON.stringify(updated));
+  const handleOpenAddModal = () => {
+    setEditingProduct(null);
     setFormData({
       productName: "",
       category: "Dress",
       status: "Available",
-      stock: "",
-      price: "",
-      imageUrl: "",
+      stock: "0",
+      price: "0",
+      imageUrl: ""
     });
-    setShowModal(false);
+    setShowModal(true);
+  };
+
+  const handleOpenEditModal = (prod) => {
+    setEditingProduct(prod);
+    setFormData({
+      productName: prod.product_name,
+      category: prod.category || "Dress",
+      status: prod.status || "Available",
+      stock: String(prod.stock || 0),
+      price: String(prod.price || 0),
+      imageUrl: prod.image_url || ""
+    });
+    setShowModal(true);
+  };
+
+  const handleDeleteClick = async (id) => {
+    if (window.confirm("Apakah Anda yakin ingin menghapus produk ini?")) {
+      try {
+        await deleteProduct(id);
+      } catch (err) {
+        alert("Gagal menghapus produk: " + err.message);
+      }
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.productName || !formData.price || !formData.stock) {
+      alert("Nama produk, harga, dan stok harus diisi!");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        product_name: formData.productName,
+        category: formData.category,
+        status: formData.status,
+        stock: parseInt(formData.stock || 0),
+        price: parseFloat(formData.price || 0),
+        image_url: formData.imageUrl || "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=200"
+      };
+
+      if (editingProduct) {
+        await updateProduct(editingProduct.id, payload);
+      } else {
+        await addProduct(payload);
+      }
+      setShowModal(false);
+    } catch (err) {
+      alert("Error: " + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getStatusIcon = (status) => {
     switch (status) {
       case "Available": return <FaCheckCircle className="text-emerald-500 text-xs" />;
-      case "Low Stock": return <FaExclamationTriangle className="text-warning text-xs" />;
-      case "Out of Stock": return <FaTimesCircle className="text-danger text-xs" />;
+      case "Low Stock": return <FaExclamationTriangle className="text-amber-500 text-xs" />;
+      case "Out of Stock": return <FaTimesCircle className="text-rose-500 text-xs" />;
       default: return null;
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-[400px] flex flex-col items-center justify-center gap-3">
+        <ImSpinner2 className="animate-spin text-primary text-2xl" />
+        <span className="text-xs text-slate-500 font-semibold">Mengambil data produk...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      
+      {error && (
+        <div className="bg-rose-50 border border-rose-100 text-rose-700 text-xs p-4 rounded-2xl font-medium flex items-center gap-2">
+          <FaExclamationTriangle className="shrink-0" />
+          <span>Error loading data: {error}</span>
+        </div>
+      )}
+
       {/* CONTROLS HEADER BAR */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
-        
         {/* Search & Filters */}
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
           <div className="relative w-full sm:w-64">
@@ -139,6 +169,7 @@ export default function ProductsManagement() {
               type="text"
               placeholder="Search by SKU or name..."
               className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary text-xs outline-none transition-all placeholder:text-slate-400"
+              value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
@@ -162,7 +193,7 @@ export default function ProductsManagement() {
 
         {/* Add Button */}
         <button
-          onClick={() => setShowModal(true)}
+          onClick={handleOpenAddModal}
           className="w-full md:w-auto bg-primary hover:bg-primary-hover text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
         >
           <FaPlus size={11} />
@@ -176,7 +207,7 @@ export default function ProductsManagement() {
           { label: "Total Products", val: stats.total, color: "text-primary", icon: <FaBoxes /> },
           { label: "Available", val: stats.available, color: "text-emerald-500", icon: <FaCheckCircle /> },
           { label: "Low Stock", val: stats.lowStock, color: "text-warning", icon: <FaExclamationTriangle /> },
-          { label: "Valuation", val: `Rp ${stats.revenue.toLocaleString()}`, color: "text-emerald-600", icon: <FaMoneyBillWave /> },
+          { label: "Inventory Valuation", val: `Rp ${stats.revenue.toLocaleString()}`, color: "text-emerald-600", icon: <FaMoneyBillWave /> },
         ].map((s, i) => (
           <Card key={i}>
             <div className="flex justify-between items-start mb-3">
@@ -213,46 +244,72 @@ export default function ProductsManagement() {
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4">Stock</th>
                 <th className="py-3 px-4">Price</th>
+                <th className="py-3 px-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredProducts.map((product) => (
-                <tr key={product.productId} className="hover:bg-slate-50/50 transition-colors">
+                <tr key={product.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-3">
                       <img
-                        src={product.image}
-                        alt={product.productName}
+                        src={product.image_url}
+                        alt={product.product_name}
                         className="w-10 h-10 rounded-lg object-cover shadow-sm border border-slate-100"
                       />
                       <div>
-                        <div className="font-bold text-slate-800">{product.productName}</div>
-                        <div className="text-[9px] text-slate-400">ID: {product.productId}</div>
+                        <div className="font-bold text-slate-800">{product.product_name}</div>
+                        <div className="text-[9px] text-slate-400">ID: {product.id}</div>
                       </div>
                     </div>
                   </td>
                   <td className="py-3 px-4 font-bold text-slate-400">
                     <span className="bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-200">
-                      {product.sku}
+                      {product.product_code}
                     </span>
                   </td>
                   <td className="py-3 px-4 text-slate-600 font-medium">{product.category}</td>
                   <td className="py-3 px-4">
-                    <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider
+                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider
                       ${product.status === 'Available' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : ''}
                       ${product.status === 'Low Stock' ? 'bg-amber-50 text-amber-700 border border-amber-100' : ''}
                       ${product.status === 'Out of Stock' ? 'bg-rose-50 text-rose-700 border border-rose-100' : ''}
-                    ">
+                    `}>
                       {getStatusIcon(product.status)}
                       <span>{product.status}</span>
-                    </div>
+                    </span>
                   </td>
                   <td className="py-3 px-4 font-bold text-slate-700">{product.stock} pcs</td>
                   <td className="py-3 px-4 font-bold text-primary">
-                    Rp {product.price.toLocaleString()}
+                    Rp {parseFloat(product.price).toLocaleString()}
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => handleOpenEditModal(product)}
+                        className="p-1.5 bg-slate-50 border border-slate-200 hover:border-primary hover:bg-primary-light hover:text-primary rounded-lg text-slate-500 cursor-pointer transition-all"
+                        title="Edit"
+                      >
+                        <FaEdit size={12} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(product.id)}
+                        className="p-1.5 bg-slate-50 border border-slate-200 hover:border-rose-500 hover:bg-rose-50 hover:text-rose-600 rounded-lg text-slate-500 cursor-pointer transition-all"
+                        title="Delete"
+                      >
+                        <FaTrash size={12} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
+              {filteredProducts.length === 0 && (
+                <tr>
+                  <td colSpan="7" className="py-8 text-center text-slate-400 font-medium">
+                    No matching products found.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -274,7 +331,6 @@ export default function ProductsManagement() {
               <FaTags className="text-primary text-sm" />
               <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider">Product Overview</h3>
             </div>
-            <FaEye className="text-slate-400 cursor-pointer hover:text-slate-600 transition-colors" />
           </div>
           <div className="space-y-3.5 text-xs text-slate-600">
             <div className="flex justify-between items-center">
@@ -283,11 +339,11 @@ export default function ProductsManagement() {
             </div>
             <div className="flex justify-between items-center">
               <span>Low Stock Products</span>
-              <span className="font-bold text-warning">{stats.lowStock}</span>
+              <span className="font-bold text-amber-600">{stats.lowStock}</span>
             </div>
             <div className="flex justify-between items-center">
               <span>Out of Stock Products</span>
-              <span className="font-bold text-danger">{stats.outStock}</span>
+              <span className="font-bold text-rose-600">{stats.outStock}</span>
             </div>
           </div>
         </div>
@@ -305,24 +361,28 @@ export default function ProductsManagement() {
             <div className="flex justify-between items-center">
               <span>Average Product Price</span>
               <span className="font-bold text-primary">
-                Rp {Math.round(stats.revenue / stats.total).toLocaleString()}
+                Rp {Math.round(products.length > 0 ? stats.revenue / products.length : 0).toLocaleString()}
               </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ADD PRODUCT MODAL */}
+      {/* ADD/EDIT PRODUCT MODAL */}
       {showModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden border border-slate-250/80 animate-slide">
+          <form onSubmit={handleSubmit} className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden border border-slate-250/80 animate-slide">
             <div className="border-b border-slate-100 p-5 flex items-center gap-3 bg-slate-50">
               <div className="w-9 h-9 rounded-xl bg-primary-light flex items-center justify-center text-primary text-sm">
                 <FaPlus />
               </div>
               <div>
-                <h2 className="text-xs font-bold text-slate-900">Add New Product</h2>
-                <p className="text-[10px] text-slate-400">Tambahkan produk baru ke inventaris</p>
+                <h2 className="text-xs font-bold text-slate-900">
+                  {editingProduct ? "Edit Product" : "Add New Product"}
+                </h2>
+                <p className="text-[10px] text-slate-400">
+                  {editingProduct ? "Perbarui rincian inventaris produk" : "Tambahkan produk baru ke inventaris"}
+                </p>
               </div>
             </div>
 
@@ -335,6 +395,7 @@ export default function ProductsManagement() {
                   className="buiq-input"
                   value={formData.productName}
                   onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
+                  required
                 />
               </div>
 
@@ -374,6 +435,7 @@ export default function ProductsManagement() {
                   className="buiq-input"
                   value={formData.stock}
                   onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                  required
                 />
               </div>
 
@@ -385,6 +447,7 @@ export default function ProductsManagement() {
                   className="buiq-input"
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  required
                 />
               </div>
 
@@ -401,12 +464,15 @@ export default function ProductsManagement() {
 
               <div className="flex gap-2.5 pt-2">
                 <button
-                  onClick={handleAddProduct}
-                  className="flex-1 bg-primary hover:bg-primary-hover text-white py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md shadow-primary/10"
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 bg-primary hover:bg-primary-hover text-white py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md shadow-primary/10 disabled:opacity-50 flex items-center justify-center gap-1.5"
                 >
-                  Add Product
+                  {isSubmitting && <ImSpinner2 className="animate-spin text-sm" />}
+                  <span>{editingProduct ? "Save Changes" : "Add Product"}</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => setShowModal(false)}
                   className="px-5 bg-slate-100 text-slate-600 hover:bg-slate-200 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
                 >
@@ -414,7 +480,7 @@ export default function ProductsManagement() {
                 </button>
               </div>
             </div>
-          </div>
+          </form>
         </div>
       )}
     </div>

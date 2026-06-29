@@ -12,6 +12,7 @@ import {
   MdWidgets,
   MdInfo,
   MdCardMembership,
+  MdPeople,
 } from "react-icons/md";
 
 const menuItems = [
@@ -43,6 +44,7 @@ const menuItems = [
       { icon: MdErrorOutline, label: "Error 400", path: "/error-400" },
       { icon: MdWarning, label: "Error 401", path: "/error-401" },
       { icon: MdErrorOutline, label: "Error 403", path: "/error-403" },
+      { icon: MdPeople, label: "User Management", path: "/user-management" },
     ],
   },
 ];

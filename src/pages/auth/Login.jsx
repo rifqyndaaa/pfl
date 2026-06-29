@@ -91,7 +91,7 @@ export default function Login() {
             .from("profiles")
             .insert({
               id: data.user.id,
-              role: "member",
+              role: data.user.email === "admin@buiq.com" ? "admin" : "member",
               full_name: fullName
             })
             .select("role")

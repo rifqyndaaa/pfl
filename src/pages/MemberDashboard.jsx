@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { syncCrmAndLoyalty, getWishlist } from "../utils/crmSync";
+import { supabase } from "../lib/supabaseClient";
+import { getWishlist } from "../utils/crmSync";
 import {
   FaCrown,
   FaSignOutAlt,
@@ -20,15 +21,26 @@ import {
   FaUser,
   FaCoins
 } from "react-icons/fa";
+import { ImSpinner2 } from "react-icons/im";
+
+// Helper to determine customer loyalty membership type dynamically from spent
+const getMembershipType = (spent) => {
+  const s = parseFloat(spent || 0);
+  if (s >= 15000000) return "VIP";
+  if (s >= 5000000) return "Gold";
+  if (s >= 1500000) return "Silver";
+  return "Basic";
+};
 
 export default function MemberDashboard() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const [currentUser, setCurrentUser] = useState(null);
   const [memberProfile, setMemberProfile] = useState(null);
   const [memberOrders, setMemberOrders] = useState([]);
   const [wishlist, setWishlist] = useState([]);
   const [copiedCode, setCopiedCode] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
   // Tabs: 'dashboard', 'riwayat', 'loyalty', 'wishlist'
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -45,40 +57,54 @@ export default function MemberDashboard() {
     birthday: "1998-08-20"
   });
 
+  const fetchMemberData = async () => {
+    if (!user) return;
+    try {
+      setLoading(true);
+      // Fetch member profile from customers
+      const { data: profile, error: profileErr } = await supabase
+        .from("customers")
+        .select("*")
+        .eq("email", user.email)
+        .maybeSingle();
+
+      if (profileErr) throw profileErr;
+
+      if (profile) {
+        setMemberProfile(profile);
+        setProfileForm({
+          phone: profile.phone || "",
+          city: profile.address || "Jakarta",
+          birthday: "1998-08-20" // default placeholder as it's not in DB schema
+        });
+
+        // Fetch member orders
+        const { data: orderData, error: ordersErr } = await supabase
+          .from("orders")
+          .select("*, products(*)")
+          .eq("customer_id", profile.id)
+          .order("created_at", { ascending: false });
+
+        if (ordersErr) throw ordersErr;
+        setMemberOrders(orderData || []);
+      }
+      setError(null);
+    } catch (err) {
+      console.error("Error loading member dashboard:", err);
+      setError(err.message || "Failed to load loyalty dashboard");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    // 1. Check Auth
     if (!user) {
       navigate("/login");
       return;
     }
-
-    setCurrentUser(user);
-
-    // 2. Synchronize CRM & Loyalty Databases
-    syncCrmAndLoyalty();
-
-    // 3. Load Synchronized Data
-    const members = JSON.parse(localStorage.getItem("buiq_members") || "[]");
-    const orders = JSON.parse(localStorage.getItem("buiq_orders") || "[]");
-    
-    const email = user.email || "member@buiq.com";
-    const profile = members.find(m => m.email.toLowerCase() === email.toLowerCase());
-    setMemberProfile(profile);
-
-    const userOrders = orders.filter(o => o.customerName === `${user.firstName} ${user.lastName}` || o.customerName === "Emily Johnson" || o.email?.toLowerCase() === email.toLowerCase());
-    setMemberOrders(userOrders);
-
-    // Wishlist
+    fetchMemberData();
     setWishlist(getWishlist());
-
-    if (profile) {
-      setProfileForm({
-        phone: profile.phone || "0812-9988-5543",
-        city: profile.city || "Jakarta",
-        birthday: profile.birthday || "1998-08-20"
-      });
-    }
-  }, [navigate, user]);
+  }, [user, navigate]);
 
   // Derived Fashion Preferences
   const preferences = useMemo(() => {
@@ -92,7 +118,7 @@ export default function MemberDashboard() {
 
     const counts = {};
     memberOrders.forEach(o => {
-      const cat = o.category || "Casual Wear";
+      const cat = o.products?.category || "Casual Wear";
       counts[cat] = (counts[cat] || 0) + 1;
     });
 
@@ -110,53 +136,51 @@ export default function MemberDashboard() {
       .join(", ");
 
     let style = "Minimalist Chic";
-    if (favorite === "Outerwear" || favorite === "Bags") style = "Contemporary Statement";
+    if (favorite === "Outerwear" || favorite === "Bags" || favorite === "Outer" || favorite === "Bag") style = "Contemporary Statement";
     else if (favorite === "Shoes") style = "Streetwear Premium";
-    else if (favorite === "Dresses" || favorite === "Accessories") style = "Classic Elegance";
+    else if (favorite === "Dresses" || favorite === "Dress" || favorite === "Accessories") style = "Classic Elegance";
 
     return { favorite, mostPurchased, style };
   }, [memberOrders]);
 
-  // Loyalty Progression Details
+  // Loyalty Progression Details (Points & CRM Tiers)
   const tierConfig = useMemo(() => {
     if (!memberProfile) return null;
-    const tier = memberProfile.membershipType;
-    const spending = memberProfile.totalSpending || 0;
+    const tier = memberProfile.membership_tier || "Bronze";
+    const points = parseInt(memberProfile.points || 0);
 
     let progress = 0;
     let nextTier = "Max Tier";
-    let nextThreshold = spending;
+    let nextThreshold = points;
     let currentThreshold = 0;
 
-    if (tier === "Basic") {
+    if (tier === "Bronze") {
       nextTier = "Silver";
       currentThreshold = 0;
-      nextThreshold = 1500000;
-      progress = Math.min((spending / 1500000) * 100, 100);
+      nextThreshold = 100;
+      progress = Math.min((points / 100) * 100, 100);
     } else if (tier === "Silver") {
       nextTier = "Gold";
-      currentThreshold = 1500000;
-      nextThreshold = 5000000;
-      progress = Math.min(((spending - 1500000) / (5000000 - 1500000)) * 100, 100);
+      currentThreshold = 100;
+      nextThreshold = 500;
+      progress = Math.min(((points - 100) / 400) * 100, 100);
     } else if (tier === "Gold") {
-      nextTier = "VIP";
-      currentThreshold = 5000000;
-      nextThreshold = 15000000;
-      progress = Math.min(((spending - 5000000) / (15000000 - 5000000)) * 100, 100);
+      nextTier = "Platinum";
+      currentThreshold = 500;
+      nextThreshold = 1000;
+      progress = Math.min(((points - 500) / 500) * 100, 100);
     } else {
-      nextTier = "VIP Elite";
+      nextTier = "Platinum Elite";
       progress = 100;
     }
 
-    // Dynamic points calculation based on tier multiplier
+    // Dynamic points multiplier based on tier
     let multiplier = 1.0;
     if (tier === "Silver") multiplier = 1.2;
     else if (tier === "Gold") multiplier = 1.5;
-    else if (tier === "VIP") multiplier = 2.0;
+    else if (tier === "Platinum") multiplier = 2.0;
 
-    const computedPoints = Math.round((spending / 10000) * multiplier);
-
-    return { progress, nextTier, nextThreshold, currentThreshold, computedPoints, multiplier };
+    return { progress, nextTier, nextThreshold, currentThreshold, computedPoints: points, multiplier, tier };
   }, [memberProfile]);
 
   const handleLogout = async () => {
@@ -169,75 +193,91 @@ export default function MemberDashboard() {
   };
 
   const handleCopyReferral = () => {
-    const referralCode = `BUIQ-${currentUser?.firstName?.toUpperCase() || "MEMBER"}-${memberProfile?.memberId?.split("-")[1] || "999"}`;
+    const referralCode = `BUIQ-${user?.firstName?.toUpperCase() || "MEMBER"}-${memberProfile?.customer_code?.split("-")[1] || "999"}`;
     navigator.clipboard.writeText(referralCode);
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
-  const handleUpdateProfile = (e) => {
+  const handleUpdateProfile = async (e) => {
     e.preventDefault();
     if (!memberProfile) return;
 
-    let members = JSON.parse(localStorage.getItem("buiq_members") || "[]");
-    let customers = JSON.parse(localStorage.getItem("buiq_customers") || "[]");
+    try {
+      const { data, error: updateErr } = await supabase
+        .from("customers")
+        .update({
+          phone: profileForm.phone,
+          address: profileForm.city
+        })
+        .eq("id", memberProfile.id)
+        .select()
+        .single();
 
-    const memIndex = members.findIndex(m => m.email.toLowerCase() === memberProfile.email.toLowerCase());
-    if (memIndex !== -1) {
-      members[memIndex].phone = profileForm.phone;
-      members[memIndex].city = profileForm.city;
-      members[memIndex].birthday = profileForm.birthday;
-      localStorage.setItem("buiq_members", JSON.stringify(members));
-      setMemberProfile(members[memIndex]);
+      if (updateErr) throw updateErr;
+      setMemberProfile(data);
+      setShowEditProfile(false);
+    } catch (err) {
+      alert("Gagal memperbarui profil: " + err.message);
     }
-
-    const custIndex = customers.findIndex(c => c.email.toLowerCase() === memberProfile.email.toLowerCase());
-    if (custIndex !== -1) {
-      customers[custIndex].phone = profileForm.phone;
-      customers[custIndex].city = profileForm.city;
-      customers[custIndex].birthday = profileForm.birthday;
-      localStorage.setItem("buiq_customers", JSON.stringify(customers));
-    }
-
-    setShowEditProfile(false);
   };
 
   // Mock collections access list
   const collectionsList = [
-    { id: "c1", name: "Modern Capsule", tierRequired: "Basic", price: "Rp 320.000", image: "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=400" },
+    { id: "c1", name: "Modern Capsule", tierRequired: "Bronze", price: "Rp 320.000", image: "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=400" },
     { id: "c2", name: "Summer Tailored Linen", tierRequired: "Silver", price: "Rp 680.000", image: "https://images.unsplash.com/photo-1509319117193-57bab727e09d?w=400" },
     { id: "c3", name: "Premium Cashmere Knitwear", tierRequired: "Gold", price: "Rp 1.450.000", image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400" },
-    { id: "c4", name: "VIP Silk Trench Coat", tierRequired: "VIP", price: "Rp 3.500.000", image: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=400" }
+    { id: "c4", name: "VIP Silk Trench Coat", tierRequired: "Platinum", price: "Rp 3.500.000", image: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=400" }
   ];
 
   // Helper to verify tier authorization level
   const checkTierAuth = (requiredTier) => {
-    if (!memberProfile) return false;
-    const currentTier = memberProfile.membershipType;
-    const tierPriority = { "Basic": 0, "Silver": 1, "Gold": 2, "VIP": 3 };
-    return tierPriority[currentTier] >= tierPriority[requiredTier];
+    if (!tierConfig) return false;
+    const currentTier = tierConfig.tier;
+    const tierPriority = { "Bronze": 0, "Silver": 1, "Gold": 2, "Platinum": 3 };
+    const requiredMapped = requiredTier === "Basic" ? "Bronze" : requiredTier === "VIP" ? "Platinum" : requiredTier;
+    return tierPriority[currentTier] >= (tierPriority[requiredMapped] ?? 0);
   };
 
   // Tier color styling classes
   const getBadgeClass = (tier) => {
-    if (tier === "VIP") return "bg-purple-100 text-purple-800 border-purple-200";
+    if (tier === "Platinum" || tier === "VIP") return "bg-purple-100 text-purple-800 border-purple-200";
     if (tier === "Gold") return "bg-amber-100 text-amber-800 border-amber-200";
     if (tier === "Silver") return "bg-slate-100 text-slate-800 border-slate-200";
-    return "bg-slate-50 text-slate-600 border-slate-100";
+    return "bg-slate-50 text-slate-650 border-slate-100";
   };
 
-  if (!currentUser || !memberProfile || !tierConfig) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#FAF9F7]">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <ImSpinner2 className="animate-spin text-primary text-2xl" />
           <span className="text-xs font-semibold text-slate-500">Loading Member Profile...</span>
         </div>
       </div>
     );
   }
 
-  const referralCode = `BUIQ-${currentUser.firstName?.toUpperCase() || "MEMBER"}-${memberProfile.memberId.split("-")[1] || "999"}`;
+  if (error || !memberProfile || !tierConfig) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAF9F7] p-6 text-center">
+        <FaExclamationTriangle className="text-rose-500 text-3xl mb-3" />
+        <h2 className="text-base font-bold text-slate-800">Gagal Memuat Profil Keanggotaan</h2>
+        <p className="text-xs text-slate-500 max-w-sm mt-1 mb-4">
+          Akun Anda belum memiliki data customer di database atau terjadi kesalahan koneksi. Silakan hubungi admin.
+        </p>
+        <button
+          onClick={handleLogout}
+          className="bg-primary text-white text-xs font-bold px-4 py-2 rounded-xl"
+        >
+          Logout
+        </button>
+      </div>
+    );
+  }
+
+  const referralCode = `BUIQ-${user?.firstName?.toUpperCase() || "MEMBER"}-${memberProfile.customer_code?.split("-")[1] || "999"}`;
+  const joinDateStr = memberProfile.created_at ? new Date(memberProfile.created_at).toISOString().split("T")[0] : "-";
 
   return (
     <>
@@ -323,14 +363,14 @@ export default function MemberDashboard() {
               {/* Profile Image & Badge Block */}
               <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
                 <img
-                  src={memberProfile.image || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop"}
+                  src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(memberProfile.email)}`}
                   alt="avatar"
-                  className="w-8 h-8 rounded-full object-cover border border-slate-200"
+                  className="w-8 h-8 rounded-full object-cover border border-slate-200 bg-slate-100"
                 />
                 <div className="hidden md:block text-left leading-none">
-                  <p className="text-[11px] font-extrabold text-slate-800">{memberProfile.fullName.split(" ")[0]}</p>
-                  <span className={`inline-block border text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md mt-0.5 ${getBadgeClass(memberProfile.membershipType)}`}>
-                    {memberProfile.membershipType} Member
+                  <p className="text-[11px] font-extrabold text-slate-800">{memberProfile.full_name?.split(" ")[0]}</p>
+                  <span className={`inline-block border text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md mt-0.5 ${getBadgeClass(tierConfig.tier)}`}>
+                    {tierConfig.tier} Member
                   </span>
                 </div>
               </div>
@@ -350,9 +390,9 @@ export default function MemberDashboard() {
 
         {/* HERO GREETING HERO SECTION */}
         <div className="max-w-6xl mx-auto px-6 mt-8">
-          <div className="bg-white border border-slate-200/60 rounded-3xl p-6 md:p-8 shadow-xs space-y-1.5">
+          <div className="bg-white border border-slate-200/66 rounded-3xl p-6 md:p-8 shadow-xs space-y-1.5">
             <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 leading-tight">
-              Halo, {currentUser.firstName || "Emily"}! 👋
+              Halo, {user.firstName || "Emily"}! 👋
             </h1>
             <p className="text-xs text-slate-500">
               Senang melihatmu kembali. Terus kumpulkan poin loyalty Anda dan dapatkan reward fashion eksklusif dari BUIQ.
@@ -380,19 +420,19 @@ export default function MemberDashboard() {
                         <h2 className="text-xl font-bold tracking-wide mt-0.5">BUIQ Boutique</h2>
                       </div>
                       <div className="bg-[#2B7FFF] text-white p-2 rounded-xl text-xs font-black tracking-wide shadow-lg shadow-[#2B7FFF]/20">
-                        {memberProfile.membershipType} Tier
+                        {tierConfig.tier} Tier
                       </div>
                     </div>
 
                     <div className="space-y-1">
                       <span className="text-[9px] font-light text-slate-400 uppercase tracking-widest">Member ID</span>
-                      <p className="text-lg font-bold font-mono tracking-wider">{memberProfile.memberId}</p>
+                      <p className="text-lg font-bold font-mono tracking-wider">{memberProfile.customer_code}</p>
                     </div>
 
                     <div className="flex justify-between items-end border-t border-white/15 pt-4">
                       <div>
                         <span className="text-[8px] font-light text-slate-400 uppercase tracking-widest block">Join Date</span>
-                        <span className="text-xs font-semibold">{memberProfile.joinDate}</span>
+                        <span className="text-xs font-semibold">{joinDateStr}</span>
                       </div>
                       <div>
                         <span className="text-[8px] font-light text-slate-400 uppercase tracking-widest block text-right">Loyalty Points</span>
@@ -426,7 +466,14 @@ export default function MemberDashboard() {
                       <div className="flex justify-between items-baseline">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Lifetime Spending</span>
                         <span className="text-sm font-black text-[#2B7FFF]">
-                          {memberProfile.totalSpending.toLocaleString("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 })}
+                          {parseFloat(memberProfile.total_spent || 0).toLocaleString("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 })}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-baseline">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Completed Purchases</span>
+                        <span className="text-sm font-black text-slate-800">
+                          {memberProfile.total_orders || 0} <span className="text-[10px] font-normal text-slate-400">Orders</span>
                         </span>
                       </div>
 
@@ -441,11 +488,11 @@ export default function MemberDashboard() {
                       </div>
 
                       <div className="flex justify-between text-[10px] font-bold text-slate-400 pt-1">
-                        <span>Tier {memberProfile.membershipType}</span>
-                        {memberProfile.membershipType !== "VIP" ? (
-                          <span>Upgrade at Rp {tierConfig.nextThreshold.toLocaleString()}</span>
+                        <span>Tier {tierConfig.tier}</span>
+                        {tierConfig.tier !== "Platinum" ? (
+                          <span>Upgrade at {tierConfig.nextThreshold.toLocaleString()} PTS</span>
                         ) : (
-                          <span>Max VIP Tier Reached</span>
+                          <span>Max Platinum Tier Reached</span>
                         )}
                       </div>
                     </div>
@@ -453,7 +500,7 @@ export default function MemberDashboard() {
 
                   <div className="pt-4 border-t border-slate-100 mt-6 flex justify-between items-center text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                     <span>Points Multiplier: {tierConfig.multiplier}x</span>
-                    {memberProfile.membershipType !== "VIP" && (
+                    {tierConfig.tier !== "Platinum" && (
                       <span className="text-[#2B7FFF]">{Math.round(100 - tierConfig.progress)}% to {tierConfig.nextTier}</span>
                     )}
                   </div>
@@ -515,11 +562,11 @@ export default function MemberDashboard() {
                       </div>
                       <div>
                         <span className="text-slate-400 block font-medium">Phone Number</span>
-                        <span className="font-bold text-slate-800 block">{profileForm.phone}</span>
+                        <span className="font-bold text-slate-800 block">{memberProfile.phone || "-"}</span>
                       </div>
                       <div className="mt-2">
-                        <span className="text-slate-400 block font-medium">Home City</span>
-                        <span className="font-bold text-slate-800 block">{profileForm.city}</span>
+                        <span className="text-slate-400 block font-medium">Address / City</span>
+                        <span className="font-bold text-slate-800 block">{memberProfile.address || "-"}</span>
                       </div>
                       <div className="mt-2">
                         <span className="text-slate-400 block font-medium">Birthday</span>
@@ -551,25 +598,42 @@ export default function MemberDashboard() {
                       <th className="py-3.5 px-6">Transaction ID</th>
                       <th className="py-3.5 px-6">Date</th>
                       <th className="py-3.5 px-6">Product Ordered</th>
+                      <th className="py-3.5 px-6 text-center">Qty</th>
                       <th className="py-3.5 px-6">Amount</th>
-                      <th className="py-3.5 px-6">Payment Method</th>
+                      <th className="py-3.5 px-6">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {memberOrders.map(ord => (
-                      <tr key={ord.orderId} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="py-4 px-6 font-bold text-slate-500">TXN-{String(ord.orderId).padStart(5, "0")}</td>
-                        <td className="py-4 px-6 font-medium text-slate-600">{ord.orderDate}</td>
-                        <td className="py-4 px-6 font-bold text-slate-800">{ord.product}</td>
-                        <td className="py-4 px-6 font-black text-[#2B7FFF]">
-                          Rp {ord.totalPrice.toLocaleString()}
-                        </td>
-                        <td className="py-4 px-6 font-medium text-slate-500">{ord.paymentMethod || "ShopeePay"}</td>
-                      </tr>
-                    ))}
+                    {memberOrders.map(ord => {
+                      const orderDateStr = ord.order_date || (ord.created_at ? new Date(ord.created_at).toISOString().split("T")[0] : "-");
+                      return (
+                        <tr key={ord.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="py-4 px-6 font-bold text-slate-400">
+                            <span className="bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-200">
+                              {ord.order_number}
+                            </span>
+                          </td>
+                          <td className="py-4 px-6 font-medium text-slate-600">{orderDateStr}</td>
+                          <td className="py-4 px-6 font-bold text-slate-800">{ord.products?.product_name || "Unknown Product"}</td>
+                          <td className="py-4 px-6 text-center font-bold text-slate-600">{ord.quantity}x</td>
+                          <td className="py-4 px-6 font-black text-[#2B7FFF]">
+                            Rp {parseFloat(ord.total_price || 0).toLocaleString()}
+                          </td>
+                          <td className="py-4 px-6">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider
+                              ${ord.status === "Completed" ? "bg-emerald-50 text-emerald-700" : ""}
+                              ${ord.status === "Pending" ? "bg-amber-50 text-amber-700" : ""}
+                              ${ord.status === "Cancelled" ? "bg-rose-50 text-rose-700" : ""}
+                            `}>
+                              {ord.status}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                     {memberOrders.length === 0 && (
                       <tr>
-                        <td colSpan="5" className="py-8 text-center text-slate-400">No transactions recorded.</td>
+                        <td colSpan="6" className="py-8 text-center text-slate-400">No transactions recorded.</td>
                       </tr>
                     )}
                   </tbody>
@@ -611,10 +675,10 @@ export default function MemberDashboard() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {[
-                      { id: "v1", title: "Rp 50k Welcome Voucher", desc: "No minimum spend, standard items.", code: "WELCOME50", tier: "Basic" },
+                      { id: "v1", title: "Rp 50k Welcome Voucher", desc: "No minimum spend, standard items.", code: "WELCOME50", tier: "Bronze" },
                       { id: "v2", title: "Rp 100k Birthday Gift", desc: "Silver tier & above, birthday month.", code: "BDAY100", tier: "Silver" },
-                      { id: "v3", title: "Rp 250k Platinum Treat", desc: "For Gold & VIP loyalty tiers.", code: "PLATINUM250", tier: "Gold" },
-                      { id: "v4", title: "Free Shipping Voucher", desc: "Free priority shipping, no minimum spend.", code: "FREESHIPVIP", tier: "Basic" }
+                      { id: "v3", title: "Rp 250k Platinum Treat", desc: "For Gold & Platinum loyalty tiers.", code: "PLATINUM250", tier: "Gold" },
+                      { id: "v4", title: "Free Shipping Voucher", desc: "Free priority shipping, no minimum spend.", code: "FREESHIPVIP", tier: "Bronze" }
                     ].map(v => {
                       const isClaimable = checkTierAuth(v.tier);
                       const claimed = voucherClaimed[v.id];
@@ -674,12 +738,12 @@ export default function MemberDashboard() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   {[
-                    { name: "Basic", spend: "< Rp 1.5M", mult: "1.0x Points", vouchers: "Rp 50k Welcome Gift", birthday: "1x Points Boost", access: "Standard Catalog Only" },
-                    { name: "Silver", spend: "Rp 1.5M - 5M", mult: "1.2x Points", vouchers: "Rp 100k Voucher", birthday: "Rp 50k Voucher", access: "Early Access Releases" },
-                    { name: "Gold", spend: "Rp 5M - 15M", mult: "1.5x Points", vouchers: "Rp 250k Voucher + Free Ship", birthday: "Rp 100k Voucher + Premium Gift", access: "Premium Collection Entry" },
-                    { name: "VIP", spend: ">= Rp 15M", mult: "2.0x Points", vouchers: "Rp 500k Voucher + Priority", birthday: "Rp 200k Voucher + Custom Gift", access: "VIP Exclusive Catalog Access" }
-                  ].map((tier, idx) => {
-                    const isActive = memberProfile.membershipType === tier.name;
+                    { name: "Bronze", spend: "< 100 PTS", mult: "1.0x Points", vouchers: "Rp 50k Welcome Gift", birthday: "1x Points Boost", access: "Standard Catalog Only" },
+                    { name: "Silver", spend: "100 - 499 PTS", mult: "1.2x Points", vouchers: "Rp 100k Voucher", birthday: "Rp 50k Voucher", access: "Early Access Releases" },
+                    { name: "Gold", spend: "500 - 999 PTS", mult: "1.5x Points", vouchers: "Rp 250k Voucher + Free Ship", birthday: "Rp 100k Voucher + Premium Gift", access: "Premium Collection Entry" },
+                    { name: "Platinum", spend: ">= 1000 PTS", mult: "2.0x Points", vouchers: "Rp 500k Voucher + Priority", birthday: "Rp 200k Voucher + Custom Gift", access: "VIP Exclusive Catalog Access" }
+                  ].map((tierItem, idx) => {
+                    const isActive = tierConfig.tier === tierItem.name;
                     return (
                       <div
                         key={idx}
@@ -695,25 +759,25 @@ export default function MemberDashboard() {
                           </span>
                         )}
 
-                        <h3 className="text-xs font-bold text-slate-850">{tier.name}</h3>
-                        <p className="text-[10px] text-slate-400 font-medium mt-0.5">Spend: {tier.spend}</p>
+                        <h3 className="text-xs font-bold text-slate-850">{tierItem.name}</h3>
+                        <p className="text-[10px] text-slate-400 font-medium mt-0.5">Spend: {tierItem.spend}</p>
 
                         <div className="mt-4 space-y-2.5 text-xs">
                           <div className="flex justify-between items-center">
                             <span className="text-slate-400 font-medium">Multiplier</span>
-                            <span className="font-bold text-slate-800">{tier.mult}</span>
+                            <span className="font-bold text-slate-800">{tierItem.mult}</span>
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-slate-400 font-medium">Vouchers</span>
-                            <span className="font-bold text-slate-800">{tier.vouchers}</span>
+                            <span className="font-bold text-slate-800">{tierItem.vouchers}</span>
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-slate-400 font-medium">Birthday Perks</span>
-                            <span className="font-bold text-slate-800">{tier.birthday}</span>
+                            <span className="font-bold text-slate-800">{tierItem.birthday}</span>
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-slate-400 font-medium">Collections</span>
-                            <span className="font-bold text-slate-800 text-right">{tier.access}</span>
+                            <span className="font-bold text-slate-800 text-right">{tierItem.access}</span>
                           </div>
                         </div>
                       </div>
@@ -827,7 +891,7 @@ export default function MemberDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {[
                     { name: "Silk Midi Dress", reason: `Matches favorite Dress collection`, price: "Rp 580.000", img: "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=400" },
-                    { name: "Leather Sling Bag", reason: `Recommended for ${memberProfile.membershipType} Tier`, price: "Rp 1.150.000", img: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=400" },
+                    { name: "Leather Sling Bag", reason: `Recommended for ${tierConfig.tier} Tier`, price: "Rp 1.150.000", img: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=400" },
                     { name: "Linen Lightweight Blazer", reason: "Ideal for layering & Minimalist style", price: "Rp 780.000", img: "https://images.unsplash.com/photo-1509319117193-57bab727e09d?w=400" }
                   ].map((rec, i) => (
                     <div key={i} className="bg-white border border-slate-200/60 rounded-2xl overflow-hidden shadow-xs flex items-center p-3 gap-4 group">
@@ -873,7 +937,7 @@ export default function MemberDashboard() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">City</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Address / City</label>
                 <input
                   type="text"
                   required
@@ -924,7 +988,7 @@ export default function MemberDashboard() {
             </div>
             <div className="p-4 space-y-3 max-h-96 overflow-y-auto">
               {[
-                { title: "Loyalty Tier Upgraded", desc: `Selamat! Akun Anda berhasil disinkronkan ke tier ${memberProfile.membershipType}.`, time: "Baru saja" },
+                { title: "Loyalty Tier Upgraded", desc: `Selamat! Akun Anda berhasil disinkronkan ke tier ${tierConfig.tier}.`, time: "Baru saja" },
                 { title: "Birthday Reward Available", desc: "Klaim voucher ulang tahun Anda di tab Loyalty & Reward.", time: "1 hari lalu" }
               ].map((notif, idx) => (
                 <div key={idx} className="p-3 hover:bg-slate-50 rounded-xl transition-all border border-slate-100 flex gap-3">

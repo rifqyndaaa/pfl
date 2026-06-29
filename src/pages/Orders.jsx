@@ -1,5 +1,8 @@
 import { useState, useMemo } from "react";
 import Card from "../components/Card";
+import { useOrders } from "../hooks/useOrders";
+import { useCustomers } from "../hooks/useCustomers";
+import { useProducts } from "../hooks/useProducts";
 import {
   FaShoppingCart,
   FaCheckCircle,
@@ -12,67 +15,57 @@ import {
   FaBox,
   FaArrowUp,
   FaTruck,
-  FaEye,
+  FaEdit,
+  FaTrash,
+  FaExclamationTriangle
 } from "react-icons/fa";
-
-const generateOrders = () => {
-  const statuses = ["Pending", "Completed", "Cancelled"];
-  const customers = [
-    { id: 1, name: "Alya Putri", avatar: "https://i.pravatar.cc/150?img=1", product: "Silk Midi Dress" },
-    { id: 2, name: "Rizky Pratama", avatar: "https://i.pravatar.cc/150?img=2", product: "Oversized Blazer" },
-    { id: 3, name: "Nadia Azzahra", avatar: "https://i.pravatar.cc/150?img=3", product: "Pleated Skirt" },
-    { id: 4, name: "Kevin Wijaya", avatar: "https://i.pravatar.cc/150?img=4", product: "Wide Leg Pants" },
-    { id: 5, name: "Salsa Nabila", avatar: "https://i.pravatar.cc/150?img=5", product: "Knit Sweater" },
-  ];
-
-  const orders = [];
-  for (let i = 1; i <= 30; i++) {
-    const cust = customers[i % customers.length];
-    orders.push({
-      orderId: i,
-      customerId: cust.id,
-      customerName: cust.name,
-      customerAvatar: cust.avatar,
-      product: cust.product,
-      status: statuses[i % 3],
-      totalPrice: Math.floor(150000 + Math.random() * 1500000),
-      orderDate: `2026-${String(Math.floor(1 + Math.random() * 12)).padStart(2, "0")}-${String(Math.floor(1 + Math.random() * 28)).padStart(2, "0")}`,
-    });
-  }
-  return orders;
-};
-
-const initialOrders = generateOrders();
+import { ImSpinner2 } from "react-icons/im";
 
 export default function OrdersManagement() {
-  const [orders, setOrders] = useState(() => {
-    const stored = localStorage.getItem("buiq_orders");
-    if (stored) return JSON.parse(stored);
-    localStorage.setItem("buiq_orders", JSON.stringify(initialOrders));
-    return initialOrders;
-  });
+  const {
+    orders,
+    loading: loadingOrders,
+    error: errorOrders,
+    addOrder,
+    updateOrder,
+    deleteOrder
+  } = useOrders();
+
+  const { customers, loading: loadingCust } = useCustomers();
+  const { products, loading: loadingProd } = useProducts();
+
   const [showModal, setShowModal] = useState(false);
+  const [editingOrder, setEditingOrder] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All");
 
   const [formData, setFormData] = useState({
     customerId: "",
-    customerName: "",
-    product: "",
+    productId: "",
+    quantity: "1",
     status: "Pending",
     totalPrice: "",
-    orderDate: "",
+    orderDate: new Date().toISOString().split("T")[0]
   });
 
-  const filteredOrders = orders.filter((o) => {
-    const matchesSearch =
-      o.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      o.orderId.toString().includes(searchTerm) ||
-      o.product.toLowerCase().includes(searchTerm.toLowerCase());
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const matchesStatus = selectedStatus === "All" || o.status === selectedStatus;
-    return matchesSearch && matchesStatus;
-  });
+  const filteredOrders = useMemo(() => {
+    return orders.filter((o) => {
+      const custName = o.customers?.full_name?.toLowerCase() || "";
+      const prodName = o.products?.product_name?.toLowerCase() || "";
+      const orderNum = o.order_number?.toLowerCase() || "";
+      const search = searchTerm.toLowerCase();
+
+      const matchesSearch =
+        custName.includes(search) ||
+        prodName.includes(search) ||
+        orderNum.includes(search);
+
+      const matchesStatus = selectedStatus === "All" || o.status === selectedStatus;
+      return matchesSearch && matchesStatus;
+    });
+  }, [orders, searchTerm, selectedStatus]);
 
   const stats = useMemo(() => {
     return {
@@ -80,52 +73,106 @@ export default function OrdersManagement() {
       completed: orders.filter((o) => o.status === "Completed").length,
       pending: orders.filter((o) => o.status === "Pending").length,
       cancelled: orders.filter((o) => o.status === "Cancelled").length,
-      totalRevenue: orders.reduce((sum, o) => sum + o.totalPrice, 0),
+      totalRevenue: orders.reduce((sum, o) => sum + parseFloat(o.total_price || 0), 0),
     };
   }, [orders]);
 
-  const handleAddOrder = () => {
-    if (!formData.customerName || !formData.product || !formData.totalPrice || !formData.orderDate) {
+  const handleOpenAddModal = () => {
+    setEditingOrder(null);
+    setFormData({
+      customerId: "",
+      productId: "",
+      quantity: "1",
+      status: "Pending",
+      totalPrice: "",
+      orderDate: new Date().toISOString().split("T")[0]
+    });
+    setShowModal(true);
+  };
+
+  const handleOpenEditModal = (order) => {
+    setEditingOrder(order);
+    setFormData({
+      customerId: String(order.customer_id),
+      productId: String(order.product_id),
+      quantity: String(order.quantity),
+      status: order.status || "Pending",
+      totalPrice: String(order.total_price),
+      orderDate: order.order_date
+    });
+    setShowModal(true);
+  };
+
+  const handleDeleteClick = async (id) => {
+    if (window.confirm("Apakah Anda yakin ingin menghapus order ini?")) {
+      try {
+        await deleteOrder(id);
+      } catch (err) {
+        alert("Gagal menghapus order: " + err.message);
+      }
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.customerId || !formData.productId || !formData.totalPrice || !formData.orderDate) {
       alert("Harap isi semua field!");
       return;
     }
 
-    const newOrder = {
-      orderId: orders.length > 0 ? Math.max(...orders.map((o) => o.orderId)) + 1 : 1,
-      ...formData,
-      customerAvatar: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
-      totalPrice: parseInt(formData.totalPrice),
-    };
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        customer_id: parseInt(formData.customerId),
+        product_id: parseInt(formData.productId),
+        quantity: parseInt(formData.quantity || 1),
+        total_price: parseFloat(formData.totalPrice),
+        status: formData.status,
+        order_date: formData.orderDate
+      };
 
-    const updated = [newOrder, ...orders];
-    setOrders(updated);
-    localStorage.setItem("buiq_orders", JSON.stringify(updated));
-    setFormData({
-      customerId: "",
-      customerName: "",
-      product: "",
-      status: "Pending",
-      totalPrice: "",
-      orderDate: "",
-    });
-    setShowModal(false);
+      if (editingOrder) {
+        await updateOrder(editingOrder.id, payload);
+      } else {
+        await addOrder(payload);
+      }
+      setShowModal(false);
+    } catch (err) {
+      alert("Error: " + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getStatusIcon = (status) => {
     switch (status) {
       case "Completed": return <FaCheckCircle className="text-emerald-500 text-xs" />;
-      case "Pending": return <FaClock className="text-warning text-xs" />;
-      case "Cancelled": return <FaTimesCircle className="text-danger text-xs" />;
+      case "Pending": return <FaClock className="text-amber-500 text-xs" />;
+      case "Cancelled": return <FaTimesCircle className="text-rose-500 text-xs" />;
       default: return null;
     }
   };
 
+  if (loadingOrders || loadingCust || loadingProd) {
+    return (
+      <div className="min-h-[400px] flex flex-col items-center justify-center gap-3">
+        <ImSpinner2 className="animate-spin text-primary text-2xl" />
+        <span className="text-xs text-slate-500 font-semibold">Mengambil data orders...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      
+      {errorOrders && (
+        <div className="bg-rose-50 border border-rose-100 text-rose-700 text-xs p-4 rounded-2xl font-medium flex items-center gap-2">
+          <FaExclamationTriangle className="shrink-0" />
+          <span>Error loading data: {errorOrders}</span>
+        </div>
+      )}
+
       {/* CONTROLS HEADER BAR */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
-        
         {/* Search & Filters */}
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
           <div className="relative w-full sm:w-64">
@@ -134,6 +181,7 @@ export default function OrdersManagement() {
               type="text"
               placeholder="Search order ID or name..."
               className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary text-xs outline-none transition-all placeholder:text-slate-400"
+              value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
@@ -157,7 +205,7 @@ export default function OrdersManagement() {
 
         {/* Add Button */}
         <button
-          onClick={() => setShowModal(true)}
+          onClick={handleOpenAddModal}
           className="w-full md:w-auto bg-primary hover:bg-primary-hover text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
         >
           <FaPlus size={11} />
@@ -171,7 +219,7 @@ export default function OrdersManagement() {
           { label: "Total Orders", val: stats.total, color: "text-primary", icon: <FaShoppingCart /> },
           { label: "Completed", val: stats.completed, color: "text-emerald-500", icon: <FaCheckCircle /> },
           { label: "Pending", val: stats.pending, color: "text-warning", icon: <FaClock /> },
-          { label: "Revenue", val: `Rp ${stats.totalRevenue.toLocaleString()}`, color: "text-emerald-600", icon: <FaMoneyBillWave /> },
+          { label: "Revenue Valuation", val: `Rp ${stats.totalRevenue.toLocaleString()}`, color: "text-emerald-600", icon: <FaMoneyBillWave /> },
         ].map((s, i) => (
           <Card key={i}>
             <div className="flex justify-between items-start mb-3">
@@ -205,54 +253,85 @@ export default function OrdersManagement() {
                 <th className="py-3 px-4">Order ID</th>
                 <th className="py-3 px-4">Customer</th>
                 <th className="py-3 px-4">Product</th>
+                <th className="py-3 px-4 text-center">Qty</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4">Total Price</th>
                 <th className="py-3 px-4">Order Date</th>
+                <th className="py-3 px-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredOrders.map((order) => (
-                <tr key={order.orderId} className="hover:bg-slate-50/50 transition-colors">
+                <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="py-3.5 px-4 font-bold text-slate-400">
                     <span className="bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-200">
-                      #{order.orderId}
+                      {order.order_number}
                     </span>
                   </td>
                   <td className="py-3.5 px-4">
                     <div className="flex items-center gap-2.5">
                       <img
-                        src={order.customerAvatar}
-                        alt={order.customerName}
-                        className="w-8 h-8 rounded-full object-cover shadow-sm"
+                        src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(order.customers?.email || "default")}`}
+                        alt={order.customers?.full_name}
+                        className="w-8 h-8 rounded-full object-cover shadow-sm border border-slate-100"
                       />
                       <div>
-                        <div className="font-bold text-slate-800">{order.customerName}</div>
-                        <div className="text-[9px] text-slate-400">ID: {order.customerId}</div>
+                        <div className="font-bold text-slate-800">{order.customers?.full_name || "Unknown"}</div>
+                        <div className="text-[9px] text-slate-400">ID: {order.customer_id}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="py-3.5 px-4 font-medium text-slate-600">{order.product}</td>
+                  <td className="py-3.5 px-4 font-semibold text-slate-700">
+                    <div>{order.products?.product_name || "Deleted Product"}</div>
+                    <div className="text-[9px] text-slate-400 font-medium">{order.products?.category}</div>
+                  </td>
+                  <td className="py-3.5 px-4 text-center font-bold text-slate-600">{order.quantity}x</td>
                   <td className="py-3.5 px-4">
-                    <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider
+                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider
                       ${order.status === 'Completed' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : ''}
                       ${order.status === 'Pending' ? 'bg-amber-50 text-amber-700 border border-amber-100' : ''}
                       ${order.status === 'Cancelled' ? 'bg-rose-50 text-rose-700 border border-rose-100' : ''}
-                    ">
+                    `}>
                       {getStatusIcon(order.status)}
                       <span>{order.status}</span>
-                    </div>
+                    </span>
                   </td>
                   <td className="py-3.5 px-4 font-bold text-primary">
-                    Rp {order.totalPrice.toLocaleString()}
+                    Rp {parseFloat(order.total_price).toLocaleString()}
                   </td>
                   <td className="py-3.5 px-4 text-slate-500">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 font-medium">
                       <FaCalendarAlt className="text-[10px]" />
-                      <span>{order.orderDate}</span>
+                      <span>{order.order_date}</span>
+                    </div>
+                  </td>
+                  <td className="py-3.5 px-4 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => handleOpenEditModal(order)}
+                        className="p-1.5 bg-slate-50 border border-slate-200 hover:border-primary hover:bg-primary-light hover:text-primary rounded-lg text-slate-500 cursor-pointer transition-all"
+                        title="Edit"
+                      >
+                        <FaEdit size={12} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(order.id)}
+                        className="p-1.5 bg-slate-50 border border-slate-200 hover:border-rose-500 hover:bg-rose-50 hover:text-rose-600 rounded-lg text-slate-500 cursor-pointer transition-all"
+                        title="Delete"
+                      >
+                        <FaTrash size={12} />
+                      </button>
                     </div>
                   </td>
                 </tr>
               ))}
+              {filteredOrders.length === 0 && (
+                <tr>
+                  <td colSpan="8" className="py-8 text-center text-slate-400 font-medium">
+                    No matching orders found.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -274,7 +353,6 @@ export default function OrdersManagement() {
               <FaBox className="text-primary text-sm" />
               <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider">Orders Overview</h3>
             </div>
-            <FaEye className="text-slate-400 cursor-pointer hover:text-slate-600 transition-colors" />
           </div>
           <div className="space-y-3.5 text-xs text-slate-600">
             <div className="flex justify-between items-center">
@@ -283,11 +361,11 @@ export default function OrdersManagement() {
             </div>
             <div className="flex justify-between items-center">
               <span>Pending Orders</span>
-              <span className="font-bold text-warning">{stats.pending}</span>
+              <span className="font-bold text-amber-600">{stats.pending}</span>
             </div>
             <div className="flex justify-between items-center">
               <span>Cancelled Orders</span>
-              <span className="font-bold text-danger">{stats.cancelled}</span>
+              <span className="font-bold text-rose-600">{stats.cancelled}</span>
             </div>
           </div>
         </div>
@@ -305,47 +383,92 @@ export default function OrdersManagement() {
             <div className="flex justify-between items-center">
               <span>Average Order Value</span>
               <span className="font-bold text-primary">
-                Rp {Math.round(stats.totalRevenue / stats.total).toLocaleString()}
+                Rp {Math.round(orders.length > 0 ? stats.totalRevenue / orders.length : 0).toLocaleString()}
               </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ADD ORDER MODAL */}
+      {/* ADD/EDIT ORDER MODAL */}
       {showModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden border border-slate-250/80 animate-slide">
+          <form onSubmit={handleSubmit} className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden border border-slate-250/80 animate-slide">
             <div className="border-b border-slate-100 p-5 flex items-center gap-3 bg-slate-50">
               <div className="w-9 h-9 rounded-xl bg-primary-light flex items-center justify-center text-primary text-sm">
                 <FaPlus />
               </div>
               <div>
-                <h2 className="text-xs font-bold text-slate-900">New Order</h2>
-                <p className="text-[10px] text-slate-400">Tambahkan order baru</p>
+                <h2 className="text-xs font-bold text-slate-900">
+                  {editingOrder ? "Edit Order" : "New Order"}
+                </h2>
+                <p className="text-[10px] text-slate-400">
+                  {editingOrder ? "Perbarui rincian transaksi order" : "Tambahkan order baru ke BUIQ"}
+                </p>
               </div>
             </div>
 
             <div className="p-5 space-y-3.5">
               <div>
-                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Customer Name</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Alya Putri"
-                  className="buiq-input"
-                  value={formData.customerName}
-                  onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                />
+                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Customer</label>
+                <select
+                  className="buiq-input bg-white"
+                  value={formData.customerId}
+                  onChange={(e) => setFormData({ ...formData, customerId: e.target.value })}
+                  required
+                >
+                  <option value="">Select Customer</option>
+                  {customers.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.full_name} ({c.customer_code})
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Product</label>
+                <select
+                  className="buiq-input bg-white"
+                  value={formData.productId}
+                  onChange={(e) => {
+                    const prodId = parseInt(e.target.value);
+                    const prod = products.find((p) => p.id === prodId);
+                    const qty = parseInt(formData.quantity || 1);
+                    setFormData({
+                      ...formData,
+                      productId: e.target.value,
+                      totalPrice: prod ? String(parseFloat(prod.price) * qty) : ""
+                    });
+                  }}
+                  required
+                >
+                  <option value="">Select Product</option>
+                  {products.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.product_name} - Rp {parseFloat(p.price).toLocaleString()}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Quantity</label>
                 <input
-                  type="text"
-                  placeholder="e.g. Silk Midi Dress"
+                  type="number"
+                  min="1"
                   className="buiq-input"
-                  value={formData.product}
-                  onChange={(e) => setFormData({ ...formData, product: e.target.value })}
+                  value={formData.quantity}
+                  onChange={(e) => {
+                    const qty = parseInt(e.target.value) || 1;
+                    const prod = products.find((p) => p.id === parseInt(formData.productId));
+                    setFormData({
+                      ...formData,
+                      quantity: String(qty),
+                      totalPrice: prod ? String(parseFloat(prod.price) * qty) : formData.totalPrice
+                    });
+                  }}
+                  required
                 />
               </div>
 
@@ -370,6 +493,7 @@ export default function OrdersManagement() {
                   className="buiq-input"
                   value={formData.totalPrice}
                   onChange={(e) => setFormData({ ...formData, totalPrice: e.target.value })}
+                  required
                 />
               </div>
 
@@ -380,17 +504,21 @@ export default function OrdersManagement() {
                   className="buiq-input"
                   value={formData.orderDate}
                   onChange={(e) => setFormData({ ...formData, orderDate: e.target.value })}
+                  required
                 />
               </div>
 
               <div className="flex gap-2.5 pt-2">
                 <button
-                  onClick={handleAddOrder}
-                  className="flex-1 bg-primary hover:bg-primary-hover text-white py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md shadow-primary/10"
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 bg-primary hover:bg-primary-hover text-white py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md shadow-primary/10 disabled:opacity-50 flex items-center justify-center gap-1.5"
                 >
-                  Confirm Order
+                  {isSubmitting && <ImSpinner2 className="animate-spin text-sm" />}
+                  <span>{editingOrder ? "Save Changes" : "Confirm Order"}</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => setShowModal(false)}
                   className="px-5 bg-slate-100 text-slate-600 hover:bg-slate-200 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
                 >
@@ -398,7 +526,7 @@ export default function OrdersManagement() {
                 </button>
               </div>
             </div>
-          </div>
+          </form>
         </div>
       )}
     </div>

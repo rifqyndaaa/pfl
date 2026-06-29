@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
+import { supabase } from "../lib/supabaseClient";
+import { ImSpinner2 } from "react-icons/im";
+import { FaExclamationTriangle } from "react-icons/fa";
 
 // ─── Inline SVG Icons ──────────────────────────────────────────────────────────
 const Ico = ({ d, size = 16 }) => (
@@ -14,133 +17,13 @@ const IShirt = () => <Ico d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-
 const ILamp = () => <Ico d={["M9 18h6", "M12 2l-4 8h8l-4-8z", "M12 10v8"]} />;
 const IBall = () => <Ico d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z M2.1 12h19.8 M12 2c-4 6-4 14 0 20 M12 2c4 6 4 14 0 20" />;
 
-// ─── Initial Fallback Data Generators ──────────────────────────────────────────
-const generateOrders = () => {
-  const statuses = ["Pending", "Completed", "Cancelled"];
-  const customers = [
-    { id: 1, name: "Alya Putri", avatar: "https://i.pravatar.cc/150?img=1", product: "Silk Midi Dress" },
-    { id: 2, name: "Rizky Pratama", avatar: "https://i.pravatar.cc/150?img=2", product: "Oversized Blazer" },
-    { id: 3, name: "Nadia Azzahra", avatar: "https://i.pravatar.cc/150?img=3", product: "Pleated Skirt" },
-    { id: 4, name: "Kevin Wijaya", avatar: "https://i.pravatar.cc/150?img=4", product: "Wide Leg Pants" },
-    { id: 5, name: "Salsa Nabila", avatar: "https://i.pravatar.cc/150?img=5", product: "Knit Sweater" },
-  ];
-  const orders = [];
-  for (let i = 1; i <= 30; i++) {
-    const cust = customers[i % customers.length];
-    orders.push({
-      orderId: i,
-      customerId: cust.id,
-      customerName: cust.name,
-      customerAvatar: cust.avatar,
-      product: cust.product,
-      status: statuses[i % 3],
-      totalPrice: Math.floor(150000 + Math.random() * 1500000),
-      orderDate: `2026-${String(Math.floor(1 + Math.random() * 12)).padStart(2, "0")}-${String(Math.floor(1 + Math.random() * 28)).padStart(2, "0")}`,
-    });
-  }
-  return orders;
-};
-
-const generateProducts = () => {
-  const categories = ["Dress", "Shoes", "Bag", "Accessories", "Outer"];
-  const statuses = ["Available", "Low Stock", "Out of Stock"];
-  const names = [
-    "Silk Dress", "Nike Sneakers", "Leather Bag", "Oversized Hoodie",
-    "Classic Watch", "Cargo Pants", "Denim Jacket", "Canvas Shoes"
-  ];
-  const images = [
-    "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=200",
-    "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=200",
-    "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=200",
-    "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=200",
-  ];
-  const products = [];
-  for (let i = 1; i <= 30; i++) {
-    const status = statuses[i % 3];
-    products.push({
-      productId: i,
-      productName: names[i % names.length],
-      category: categories[i % categories.length],
-      status: status,
-      stock: status === "Out of Stock" ? 0 : status === "Low Stock" ? Math.floor(2 + Math.random() * 8) : Math.floor(15 + Math.random() * 70),
-      price: Math.floor(100000 + Math.random() * 1500000),
-      image: images[i % images.length],
-      sku: `PRD-${String(i).padStart(4, "0")}`,
-    });
-  }
-  return products;
-};
-
-const generateCustomers = () => {
-  const names = [
-    "Alya Putri", "Rizky Pratama", "Nadia Azzahra", "Fajar Ramadhan",
-    "Citra Lestari", "Kevin Wijaya", "Dinda Maharani", "Raka Saputra",
-    "Salsa Nabila", "Andi Firmansyah",
-  ];
-  const statuses = ["Active", "VIP", "Inactive"];
-  const images = [
-    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
-    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop",
-    "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop",
-    "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop",
-    "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop",
-  ];
-  const customers = [];
-  for (let i = 1; i <= 30; i++) {
-    customers.push({
-      customerId: i,
-      customerName: names[i % names.length],
-      email: `customer${i}@gmail.com`,
-      status: statuses[i % 3],
-      totalOrders: Math.floor(1 + Math.random() * 50),
-      totalSpent: Math.floor(500000 + Math.random() * 10000000),
-      image: images[i % images.length],
-      customerCode: `CUST-${String(i).padStart(4, "0")}`,
-    });
-  }
-  return customers;
-};
-
-const generateMembers = () => {
-  const names = [
-    "Alya Putri", "Rizky Pratama", "Nadia Azzahra", "Fajar Ramadhan",
-    "Citra Lestari", "Kevin Wijaya", "Dinda Maharani", "Raka Saputra",
-    "Salsa Nabila", "Andi Firmansyah",
-    "Budi Santoso", "Siti Aminah", "Eko Prasetyo", "Dewi Lestari", "Rian Hidayat"
-  ];
-  const membershipTypes = ["Basic", "Silver", "Gold", "VIP"];
-  const statuses = ["Active", "Inactive", "Suspended"];
-  const images = [
-    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
-    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop",
-    "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop",
-    "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop",
-    "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop",
-  ];
-  const phonePrefixes = ["0812", "0813", "0821", "0857", "0878"];
-
-  const members = [];
-  for (let i = 1; i <= 15; i++) {
-    const name = names[i - 1];
-    const type = membershipTypes[i % 4];
-    const status = statuses[i % 3];
-    const monthStr = String(Math.floor(1 + ((i - 1) % 6))).padStart(2, "0");
-    const dayStr = String(1 + (i * 3) % 27).padStart(2, "0");
-
-    members.push({
-      memberId: `MEM-${String(i).padStart(4, "0")}`,
-      fullName: name,
-      email: `${name.toLowerCase().replace(/\s+/g, "")}@gmail.com`,
-      phone: `${phonePrefixes[i % phonePrefixes.length]}-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(100 + Math.random() * 905)}`,
-      membershipType: type,
-      status: status,
-      joinDate: `2026-${monthStr}-${dayStr}`,
-      totalOrders: Math.floor(2 + (i * 3) % 15),
-      totalSpending: Math.floor(250000 + (i * 650000) % 6000000),
-      image: images[i % images.length]
-    });
-  }
-  return members;
+// Helper to determine customer loyalty membership type dynamically from spent
+const getMembershipType = (spent) => {
+  const s = parseFloat(spent || 0);
+  if (s >= 15000000) return "VIP";
+  if (s >= 5000000) return "Gold";
+  if (s >= 1500000) return "Silver";
+  return "Basic";
 };
 
 // ─── Chart.js loader hook ──────────────────────────────────────────────────────
@@ -281,39 +164,47 @@ const SectionTitle = ({ children, right }) => (
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function AnalyticsDashboard() {
   const [isVisible, setIsVisible] = useState(false);
+  const [orders, setOrders] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Initialize data sources from localStorage or dynamic generators fallback
-  const [orders, setOrders] = useState(() => {
-    const stored = localStorage.getItem("buiq_orders");
-    if (stored) return JSON.parse(stored);
-    const initial = generateOrders();
-    localStorage.setItem("buiq_orders", JSON.stringify(initial));
-    return initial;
-  });
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
 
-  const [products, setProducts] = useState(() => {
-    const stored = localStorage.getItem("buiq_products");
-    if (stored) return JSON.parse(stored);
-    const initial = generateProducts();
-    localStorage.setItem("buiq_products", JSON.stringify(initial));
-    return initial;
-  });
+      // Fetch all required data from Supabase
+      const [ordersRes, productsRes, customersRes] = await Promise.all([
+        supabase
+          .from("orders")
+          .select("*, customers(*), products(*)")
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("products")
+          .select("*")
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("customers")
+          .select("*")
+          .order("created_at", { ascending: false })
+      ]);
 
-  const [customers, setCustomers] = useState(() => {
-    const stored = localStorage.getItem("buiq_customers");
-    if (stored) return JSON.parse(stored);
-    const initial = generateCustomers();
-    localStorage.setItem("buiq_customers", JSON.stringify(initial));
-    return initial;
-  });
+      if (ordersRes.error) throw ordersRes.error;
+      if (productsRes.error) throw productsRes.error;
+      if (customersRes.error) throw customersRes.error;
 
-  const [members, setMembers] = useState(() => {
-    const stored = localStorage.getItem("buiq_members");
-    if (stored) return JSON.parse(stored);
-    const initial = generateMembers();
-    localStorage.setItem("buiq_members", JSON.stringify(initial));
-    return initial;
-  });
+      setOrders(ordersRes.data || []);
+      setProducts(productsRes.data || []);
+      setCustomers(customersRes.data || []);
+      setError(null);
+    } catch (err) {
+      console.error("Dashboard data fetch error:", err);
+      setError(err.message || "Failed to load dashboard data");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     setIsVisible(true);
@@ -324,23 +215,7 @@ export default function AnalyticsDashboard() {
       document.head.appendChild(s);
     }
 
-    // Storage event listener to keep dashboard synced if orders/products change
-    const syncData = () => {
-      const storedOrders = localStorage.getItem("buiq_orders");
-      if (storedOrders) setOrders(JSON.parse(storedOrders));
-      const storedProducts = localStorage.getItem("buiq_products");
-      if (storedProducts) setProducts(JSON.parse(storedProducts));
-      const storedCustomers = localStorage.getItem("buiq_customers");
-      if (storedCustomers) setCustomers(JSON.parse(storedCustomers));
-      const storedMembers = localStorage.getItem("buiq_members");
-      if (storedMembers) setMembers(JSON.parse(storedMembers));
-    };
-
-    window.addEventListener("storage", syncData);
-    // Sync on focus (since SPA navigation changes component mounting)
-    syncData();
-
-    return () => window.removeEventListener("storage", syncData);
+    fetchDashboardData();
   }, []);
 
   // 1. Connect Dashboard statistics to existing Orders data
@@ -348,7 +223,7 @@ export default function AnalyticsDashboard() {
     const total = orders.length;
     const completed = orders.filter((o) => o.status === "Completed").length;
     const pending = orders.filter((o) => o.status === "Pending").length;
-    const revenue = orders.reduce((sum, o) => sum + o.totalPrice, 0);
+    const revenue = orders.reduce((sum, o) => sum + parseFloat(o.total_price || 0), 0);
     return { total, completed, pending, revenue };
   }, [orders]);
 
@@ -357,7 +232,7 @@ export default function AnalyticsDashboard() {
     const total = products.length;
     const available = products.filter((p) => p.status === "Available" || p.stock > 10).length;
     const lowStock = products.filter((p) => p.status === "Low Stock" || (p.stock > 0 && p.stock <= 10)).length;
-    const inventoryValuation = products.reduce((sum, p) => sum + (p.price * p.stock), 0);
+    const inventoryValuation = products.reduce((sum, p) => sum + (parseFloat(p.price || 0) * parseInt(p.stock || 0)), 0);
     return { total, available, lowStock, inventoryValuation };
   }, [products]);
 
@@ -365,25 +240,26 @@ export default function AnalyticsDashboard() {
   const customersStats = useMemo(() => {
     const total = customers.length;
     const active = customers.filter((c) => c.status === "Active").length;
-    const vip = customers.filter((c) => c.status === "VIP").length;
+    const vip = customers.filter((c) => c.membership_tier === "Platinum" || c.membership_tier === "VIP" || c.status === "VIP").length;
     const inactive = customers.filter((c) => c.status === "Inactive").length;
     return { total, active, vip, inactive };
   }, [customers]);
 
   const membersStats = useMemo(() => {
-    const total = members.length;
-    const vip = members.filter((m) => m.membershipType === "VIP").length;
-    const newThisMonth = members.filter((m) => m.joinDate && m.joinDate.startsWith("2026-06")).length;
+    const total = customers.length;
+    const vip = customers.filter((c) => c.membership_tier === "Platinum" || c.membership_tier === "VIP").length;
 
-    const juneCount = members.filter((m) => m.joinDate && m.joinDate.startsWith("2026-06")).length;
-    const mayCount = members.filter((m) => m.joinDate && m.joinDate.startsWith("2026-05")).length;
+    // Filter by registration date (created_at field)
+    const newThisMonth = customers.filter((c) => c.created_at && c.created_at.startsWith("2026-06")).length;
+    const juneCount = customers.filter((c) => c.created_at && c.created_at.startsWith("2026-06")).length;
+    const mayCount = customers.filter((c) => c.created_at && c.created_at.startsWith("2026-05")).length;
     const growthVal = mayCount === 0 ? juneCount * 100 : Math.round(((juneCount - mayCount) / mayCount) * 100);
     const growthStr = growthVal >= 0 ? `+${growthVal}%` : `${growthVal}%`;
 
     const trend = Array(12).fill(0);
-    members.forEach((m) => {
-      if (m.joinDate) {
-        const month = parseInt(m.joinDate.split("-")[1], 10) - 1;
+    customers.forEach((c) => {
+      if (c.created_at) {
+        const month = new Date(c.created_at).getMonth();
         if (month >= 0 && month < 12) {
           trend[month] += 1;
         }
@@ -391,16 +267,16 @@ export default function AnalyticsDashboard() {
     });
 
     return { total, vip, newThisMonth, growthStr, trend };
-  }, [members]);
+  }, [customers]);
 
   // 4. Revenue chart must be generated from actual order data grouped by month
   const monthlyRevenue = useMemo(() => {
     const revenueByMonth = Array(12).fill(0);
     orders.forEach((o) => {
-      if (o.orderDate) {
-        const month = parseInt(o.orderDate.split("-")[1], 10) - 1;
+      if (o.order_date) {
+        const month = new Date(o.order_date).getMonth();
         if (month >= 0 && month < 12) {
-          revenueByMonth[month] += o.totalPrice;
+          revenueByMonth[month] += parseFloat(o.total_price || 0);
         }
       }
     });
@@ -430,9 +306,7 @@ export default function AnalyticsDashboard() {
 
   // 7. Recent Orders widget using latest orders
   const recentOrders = useMemo(() => {
-    return [...orders]
-      .sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate) || b.orderId - a.orderId)
-      .slice(0, 5);
+    return [...orders].slice(0, 5);
   }, [orders]);
 
   // 8. Low Stock Alert widget using products marked as Low Stock or Out of Stock
@@ -447,7 +321,8 @@ export default function AnalyticsDashboard() {
   const topSellingProducts = useMemo(() => {
     const counts = {};
     orders.forEach((o) => {
-      counts[o.product] = (counts[o.product] || 0) + 1;
+      const pName = o.products?.product_name || "Unknown Product";
+      counts[pName] = (counts[pName] || 0) + parseInt(o.quantity || 1);
     });
     return Object.keys(counts)
       .map((name) => ({ name, count: counts[name] }))
@@ -455,8 +330,23 @@ export default function AnalyticsDashboard() {
       .slice(0, 5);
   }, [orders]);
 
+  if (loading) {
+    return (
+      <div className="min-h-[400px] flex flex-col items-center justify-center gap-3">
+        <ImSpinner2 className="animate-spin text-primary text-2xl" />
+        <span className="text-xs text-slate-500 font-semibold">Mengambil data analitik...</span>
+      </div>
+    );
+  }
+
   return (
     <div className={`transition-opacity duration-500 ${isVisible ? 'opacity-100' : 'opacity-0'} space-y-6`}>
+      {error && (
+        <div className="bg-rose-50 border border-rose-100 text-rose-700 text-xs p-4 rounded-2xl font-medium flex items-center gap-2 animate-pulse">
+          <FaExclamationTriangle className="shrink-0" />
+          <span>Gagal memuat analitik: {error}</span>
+        </div>
+      )}
 
       {/* ── BOUTIQUE & LIFESTYLE HERO BANNER ── */}
       <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 rounded-3xl p-8 md:p-12 text-white border border-slate-850 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -524,7 +414,7 @@ export default function AnalyticsDashboard() {
         <Card>
           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Total Orders</p>
           <p className="text-2xl font-black text-slate-800 my-1">{ordersStats.total}</p>
-          <Sparkline data={orders.slice(-10).map(o => o.totalPrice)} color="#10B981" height={45} />
+          <Sparkline data={orders.slice(-10).map(o => parseFloat(o.total_price || 0))} color="#10B981" height={45} />
         </Card>
 
         <Card>
@@ -535,7 +425,7 @@ export default function AnalyticsDashboard() {
               In progress
             </span>
           </div>
-          <Sparkline data={orders.filter(o => o.status === "Pending").slice(-10).map(o => o.totalPrice)} color="#EF4444" height={45} />
+          <Sparkline data={orders.filter(o => o.status === "Pending").slice(-10).map(o => parseFloat(o.total_price || 0))} color="#EF4444" height={45} />
         </Card>
 
         <Card>
@@ -630,7 +520,7 @@ export default function AnalyticsDashboard() {
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Membership Growth</p>
             <div className="flex justify-between items-baseline mt-1">
               <p className="text-2xl font-black text-slate-800">{membersStats.growthStr}</p>
-              <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100">MoM Registration</span>
+              <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100 font-extrabold">MoM Registration</span>
             </div>
           </Card>
         </div>
@@ -673,21 +563,21 @@ export default function AnalyticsDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Recent Orders Widget */}
         <Card>
-          <SectionTitle right={<span className="text-[10px] text-slate-400 font-semibold">Latest 5</span>}>
+          <SectionTitle right={<span className="text-[10px] text-slate-400 font-semibold font-bold">Latest 5</span>}>
             Recent Orders
           </SectionTitle>
           <div className="flex flex-col gap-3">
             {recentOrders.map((o) => (
-              <div key={o.orderId} className="flex items-center justify-between text-xs py-1 border-b border-slate-50 last:border-0">
+              <div key={o.id} className="flex items-center justify-between text-xs py-1 border-b border-slate-50 last:border-0">
                 <div className="flex items-center gap-2.5">
-                  <img src={o.customerAvatar} alt={o.customerName} className="w-8 h-8 rounded-full object-cover shadow-sm" />
+                  <img src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(o.customers?.email || "default")}`} alt={o.customers?.full_name} className="w-8 h-8 rounded-full object-cover shadow-sm border border-slate-100" />
                   <div>
-                    <p className="font-bold text-slate-800">{o.customerName}</p>
-                    <p className="text-[10px] text-slate-400">{o.product}</p>
+                    <p className="font-bold text-slate-800">{o.customers?.full_name || "Unknown"}</p>
+                    <p className="text-[10px] text-slate-400">{o.products?.product_name || "Deleted Product"}</p>
                   </div>
                 </div>
                 <div className="text-right flex flex-col items-end gap-1">
-                  <p className="font-bold text-primary">Rp {o.totalPrice.toLocaleString()}</p>
+                  <p className="font-bold text-primary">Rp {parseFloat(o.total_price || 0).toLocaleString()}</p>
                   <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider ${o.status === "Completed" ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : o.status === "Pending" ? "bg-amber-50 text-amber-700 border border-amber-100" : "bg-rose-50 text-rose-700 border border-rose-100"
                     }`}>{o.status}</span>
                 </div>
@@ -701,21 +591,21 @@ export default function AnalyticsDashboard() {
 
         {/* Low Stock Alerts Widget */}
         <Card>
-          <SectionTitle right={<span className="text-[10px] text-rose-500 font-semibold">Alerts</span>}>
+          <SectionTitle right={<span className="text-[10px] text-rose-500 font-semibold font-bold">Alerts</span>}>
             Low Stock Alerts
           </SectionTitle>
           <div className="flex flex-col gap-3">
             {lowStockAlerts.map((p) => (
-              <div key={p.productId} className="flex items-center justify-between text-xs py-1 border-b border-slate-50 last:border-0">
+              <div key={p.id} className="flex items-center justify-between text-xs py-1 border-b border-slate-50 last:border-0">
                 <div className="flex items-center gap-2.5">
-                  <img src={p.image} alt={p.productName} className="w-8 h-8 rounded-xl object-cover shadow-sm border border-slate-100" />
+                  <img src={p.image_url} alt={p.product_name} className="w-8 h-8 rounded-xl object-cover shadow-sm border border-slate-100" />
                   <div>
-                    <p className="font-bold text-slate-800">{p.productName}</p>
-                    <p className="text-[10px] text-slate-400">{p.sku} • {p.category}</p>
+                    <p className="font-bold text-slate-800">{p.product_name}</p>
+                    <p className="text-[10px] text-slate-400">{p.product_code} • {p.category}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${p.stock === 0 ? "bg-rose-50 text-rose-600" : "bg-amber-50 text-amber-600"
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${p.stock === 0 ? "bg-rose-50 text-rose-600 border border-rose-100" : "bg-amber-50 text-amber-600 border border-amber-100"
                     }`}>
                     {p.stock} pcs left
                   </span>
@@ -723,14 +613,14 @@ export default function AnalyticsDashboard() {
               </div>
             ))}
             {lowStockAlerts.length === 0 && (
-              <p className="text-xs text-emerald-600 text-center py-4">All products fully stocked! 🎉</p>
+              <p className="text-xs text-emerald-600 text-center py-4 font-bold">All products fully stocked! 🎉</p>
             )}
           </div>
         </Card>
 
         {/* Top Selling Products Widget */}
         <Card>
-          <SectionTitle right={<span className="text-[10px] text-emerald-500 font-semibold">By Quantity</span>}>
+          <SectionTitle right={<span className="text-[10px] text-emerald-500 font-semibold font-bold">By Quantity</span>}>
             Top Selling Products
           </SectionTitle>
           <div className="flex flex-col gap-3">
@@ -746,7 +636,7 @@ export default function AnalyticsDashboard() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs font-bold text-slate-700">{p.count} sales</span>
+                  <span className="text-xs font-bold text-slate-700">{p.count} units</span>
                 </div>
               </div>
             ))}
