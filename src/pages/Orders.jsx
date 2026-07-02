@@ -31,7 +31,7 @@ export default function OrdersManagement() {
     deleteOrder
   } = useOrders();
 
-  const { customers, loading: loadingCust } = useCustomers();
+  const { customers, loading: loadingCust, refresh: refreshCustomers } = useCustomers();
   const { products, loading: loadingProd } = useProducts();
 
   const [showModal, setShowModal] = useState(false);
@@ -107,6 +107,9 @@ export default function OrdersManagement() {
     if (window.confirm("Apakah Anda yakin ingin menghapus order ini?")) {
       try {
         await deleteOrder(id);
+        if (typeof refreshCustomers === "function") {
+          refreshCustomers();
+        }
       } catch (err) {
         alert("Gagal menghapus order: " + err.message);
       }
@@ -135,6 +138,9 @@ export default function OrdersManagement() {
         await updateOrder(editingOrder.id, payload);
       } else {
         await addOrder(payload);
+      }
+      if (typeof refreshCustomers === "function") {
+        refreshCustomers();
       }
       setShowModal(false);
     } catch (err) {

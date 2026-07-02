@@ -246,7 +246,7 @@ export default function MemberManagement() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredMembers.map((member) => {
-                const tier = getMembershipType(member.total_spent);
+                const tier = member.membership_tier || "Bronze";
                 return (
                   <tr key={member.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="py-3.5 px-4">

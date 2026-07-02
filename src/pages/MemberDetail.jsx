@@ -77,15 +77,13 @@ export default function MemberDetail() {
     fetchMemberDetails();
   }, [id]);
 
-  // Compute total spending and orders dynamically
+  // Compute total spending and orders dynamically from database stats
   const calculatedStats = useMemo(() => {
-    const totalOrders = orders.length;
-    const totalSpending = orders.reduce((sum, o) => sum + parseFloat(o.total_price || 0), 0);
     return {
-      totalOrders: totalOrders || (member ? member.total_orders : 0),
-      totalSpending: totalSpending || (member ? parseFloat(member.total_spent || 0) : 0)
+      totalOrders: member ? member.total_orders : 0,
+      totalSpending: member ? parseFloat(member.total_spent || 0) : 0
     };
-  }, [orders, member]);
+  }, [member]);
 
   // Generate activities for timeline
   const activityTimeline = useMemo(() => {
@@ -230,7 +228,7 @@ export default function MemberDetail() {
     );
   }
 
-  const tier = getMembershipType(member.total_spent);
+  const tier = member.membership_tier || "Bronze";
   const joinDateStr = member.created_at ? new Date(member.created_at).toISOString().split("T")[0] : "-";
 
   return (
@@ -266,8 +264,9 @@ export default function MemberDetail() {
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-2 hidden sm:inline">Tier:</span>
             <select
               value={tier}
-              onChange={(e) => handleUpdateTier(e.target.value)}
-              className="bg-white border border-slate-200 hover:border-slate-350 font-bold text-[11px] px-3 py-1.5 rounded-xl outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all text-slate-700 cursor-pointer"
+              disabled
+              className="bg-slate-50 border border-slate-200 font-bold text-[11px] px-3 py-1.5 rounded-xl outline-none text-slate-400 cursor-not-allowed opacity-80"
+              title="Membership tier dihitung otomatis berdasarkan riwayat belanja"
             >
               <option value="Bronze">Bronze</option>
               <option value="Silver">Silver</option>
