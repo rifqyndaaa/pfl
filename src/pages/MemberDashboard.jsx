@@ -5,6 +5,7 @@ import { supabase } from "../lib/supabaseClient";
 import { activityLogService } from "../services/activityLogService";
 import { getWishlist } from "../utils/crmSync";
 import {
+  FaExclamationTriangle,
   FaCrown,
   FaSignOutAlt,
   FaShoppingBag,
@@ -71,11 +72,42 @@ export default function MemberDashboard() {
 
       if (profileErr) throw profileErr;
 
-      if (profile) {
-        setMemberProfile(profile);
+      let activeProfile = profile;
+
+      if (!activeProfile) {
+        console.log("=== CUSTOMER RECORD NOT FOUND. CREATING ON THE FLY ===");
+        const fullName = user.full_name || user.email?.split("@")[0] || "Member";
+        const randCode = "CUST-" + Math.floor(1000 + Math.random() * 9000);
+        
+        const { data: newProfile, error: insertErr } = await supabase
+          .from("customers")
+          .insert({
+            customer_code: randCode,
+            full_name: fullName,
+            email: user.email,
+            phone: "",
+            address: "",
+            status: "Active",
+            total_spent: 0,
+            total_orders: 0,
+            points: 0,
+            membership_tier: "Bronze"
+          })
+          .select()
+          .single();
+
+        if (insertErr) {
+          console.error("Gagal membuat customer profile otomatis:", insertErr);
+        } else {
+          activeProfile = newProfile;
+        }
+      }
+
+      if (activeProfile) {
+        setMemberProfile(activeProfile);
         setProfileForm({
-          phone: profile.phone || "",
-          city: profile.address || "Jakarta",
+          phone: activeProfile.phone || "",
+          city: activeProfile.address || "Jakarta",
           birthday: "1998-08-20" // default placeholder as it's not in DB schema
         });
 
@@ -83,7 +115,7 @@ export default function MemberDashboard() {
         const { data: orderData, error: ordersErr } = await supabase
           .from("orders")
           .select("*, products(*)")
-          .eq("customer_id", profile.id)
+          .eq("customer_id", activeProfile.id)
           .order("created_at", { ascending: false });
 
         if (ordersErr) throw ordersErr;

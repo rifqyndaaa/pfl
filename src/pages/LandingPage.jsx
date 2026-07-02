@@ -1,1200 +1,2083 @@
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "../lib/supabaseClient";
+import { orderService } from "../services/orderService";
+import { motion, AnimatePresence, animate } from "framer-motion";
 import {
   MdShoppingBag,
+  MdShoppingCart,
+  MdNotifications,
   MdStar,
   MdCheckCircle,
   MdArrowBackIos,
   MdArrowForwardIos,
   MdMenu,
   MdClose,
-  MdKeyboardArrowUp,
-  MdChat,
-  MdSend,
-  MdLayers,
-  MdLocalOffer,
-  MdHeadsetMic,
+  MdSearch,
+  MdOutlineCheckroom,
+  MdCardMembership,
+  MdInfo,
   MdLocalShipping,
-  MdStyle,
+  MdSecurity,
+  MdKeyboardArrowDown,
+  MdTrendingUp,
+  MdInventory2,
+  MdPeople,
+  MdReceiptLong,
+  MdBarChart,
+  MdPayment,
+  MdThumbUpAlt,
 } from "react-icons/md";
-import { FaInstagram, FaTiktok, FaFacebook } from "react-icons/fa";
+import { FaInstagram, FaTiktok, FaFacebook, FaTshirt, FaFemale, FaShoePrints, FaGem } from "react-icons/fa";
 
-// ─── DATA ────────────────────────────────────────────────────────────────────
+// ─── STATIC DATA ─────────────────────────────────────────────────────────────
 
-const categories = [
-  { id: "mens",       name: "Men's Fashion",        desc: "Refined apparel for the modern man",            img: "/img/mens_fashion.png",        position: "object-[50%_20%]" },
-  { id: "womens",     name: "Women's Fashion",       desc: "Chic designs for everyday confidence",          img: "/img/womens_fashion.png",      position: "object-[50%_25%]" },
-  { id: "accessories",name: "Bags & Accessories",    desc: "Elevate your look with premium details",        img: "/img/bags_accessories.png",    position: "object-[50%_40%]" },
-  { id: "shoes",      name: "Shoes Collection",      desc: "Step out in comfort and modern style",          img: "/img/shoes_collection.png",    position: "object-[50%_50%]" },
-  { id: "lifestyle",  name: "Lifestyle Essentials",  desc: "Designed for your daily routine",               img: "/img/lifestyle_essentials.png",position: "object-[50%_35%]" },
+const categoriesList = [
+  { id: "Fashion", name: "Fashion", icon: FaTshirt, desc: "Premium outfits & streetwear" },
+  { id: "Dress", name: "Dress", icon: FaFemale, desc: "Elegant designer silhouettes" },
+  { id: "Shoes", name: "Shoes", icon: FaShoePrints, desc: "Step out in absolute comfort" },
+  { id: "Bag", name: "Bag", icon: MdShoppingBag, desc: "Handcrafted boutique bags" },
+  { id: "Accessories", name: "Accessories", icon: FaGem, desc: "Chic accents to elevate your look" }
 ];
 
-const products = [
-  { id: 1, name: "Premium Cotton Heavyweight Tee",     category: "mens",        price: 189000, rating: 5, stock: "Available", img: "/img/mens_fashion.png",         position: "object-[50%_20%]" },
-  { id: 2, name: "Classic Fit Oxford Shirt",           category: "mens",        price: 349000, rating: 5, stock: "Available", img: "/img/mens_fashion.png",         position: "object-[50%_25%]" },
-  { id: 3, name: "Minimalist Oversized Hoodie",        category: "womens",      price: 429000, rating: 5, stock: "Available", img: "/img/womens_fashion.png",       position: "object-[50%_22%]" },
-  { id: 4, name: "Structured Utility Jacket",          category: "womens",      price: 549000, rating: 4, stock: "Low Stock", img: "/img/womens_fashion.png",       position: "object-[50%_28%]" },
-  { id: 5, name: "Water-Resistant Commuter Backpack",  category: "accessories", price: 599000, rating: 5, stock: "Available", img: "/img/bags_accessories.png",     position: "object-[50%_40%]" },
-  { id: 6, name: "Retro Canvas Streetwear Sneakers",   category: "shoes",       price: 499000, rating: 5, stock: "Available", img: "/img/shoes_collection.png",     position: "object-[50%_50%]" },
-  { id: 7, name: "Signature Leather Wallet",           category: "accessories", price: 299000, rating: 4, stock: "Available", img: "/img/bags_accessories.png",     position: "object-[50%_45%]" },
-  { id: 8, name: "Minimalist Matte Water Bottle",      category: "lifestyle",   price: 249000, rating: 4, stock: "Low Stock", img: "/img/lifestyle_essentials.png", position: "object-[50%_35%]" },
-];
-
-const testimonials = [
+const membershipTiers = [
   {
-    quote: "BUIQ's CRM transformed our store operations. We synced our offline loyalty program with our online boutique store, resulting in a 40% increase in repeat customer purchases within the first quarter.",
-    author: "Rian Pramana",
-    role: "Retail Operations Director",
-    company: "ZARA Indonesia",
-    avatar: "/img/mens_fashion.png",
-    rating: 5
+    name: "Bronze",
+    color: "from-amber-600 to-amber-800",
+    pointsReq: "0 Points Required",
+    multiplier: "1.0x Points",
+    voucher: "Rp 10.000 Welcome Voucher",
+    reward: "Standard Redeem Rate",
+    shipping: "Standard Rates",
+    discount: "None"
   },
   {
-    quote: "The inventory analytics and automated low-stock warnings are exceptionally precise. We reduced overstocking costs by 25% while maintaining a 99% availability rate for our seasonal highlights.",
-    author: "Amanda Safitri",
-    role: "Chief Merchant & Designer",
-    company: "COS Store Jakarta",
-    avatar: "/img/womens_fashion.png",
-    rating: 5
+    name: "Silver",
+    color: "from-slate-400 to-slate-600",
+    pointsReq: "500 Points Required",
+    multiplier: "1.2x Points",
+    voucher: "Rp 25.000 Birthday Voucher",
+    reward: "Priority Redeem",
+    shipping: "Free Shipping (Min Rp 500k)",
+    discount: "5% Off Selected Items"
   },
   {
-    quote: "Our floor staff love the clienteling interface. They can look up buyer profiles, past sizes, and VIP loyalty status in under 10 seconds. It makes customer service feel incredibly personalized.",
-    author: "Daniel Wijaya",
-    role: "Founder & Creative Director",
-    company: "W/D Studio Jakarta",
-    avatar: "/img/mens_fashion.png",
-    rating: 5
+    name: "Gold",
+    color: "from-yellow-500 to-amber-600",
+    pointsReq: "1,500 Points Required",
+    multiplier: "1.5x Points",
+    voucher: "Rp 50.000 Monthly Voucher",
+    reward: "VIP Redeem Benefits",
+    shipping: "Free Shipping (Min Rp 300k)",
+    discount: "10% Off All Items"
   },
+  {
+    name: "Platinum",
+    color: "from-slate-800 to-slate-950",
+    pointsReq: "5,000 Points Required",
+    multiplier: "2.0x Points",
+    voucher: "Rp 100.000 Seasonal Voucher",
+    reward: "Instant Reward Claims",
+    shipping: "Free Shipping (No Min Spend)",
+    discount: "15% Off All Items + Early Access"
+  }
 ];
 
-const navItems = [
-  { label: "Home", id: "hero" },
-  { label: "Features", id: "why-us" },
-  { label: "About", id: "about" },
-  { label: "Contact", id: "contact" }
+const crmFlowSteps = [
+  { num: "01", step: "Guest", desc: "Browses boutique store layout." },
+  { num: "02", step: "Register", desc: "Creates verified member profile." },
+  { num: "03", step: "Browse Product", desc: "Checks premium products database." },
+  { num: "04", step: "Shopping Cart", desc: "Adds outfits to temporary cart." },
+  { num: "05", step: "Checkout", desc: "Initiates purchase transaction." },
+  { num: "06", step: "Order", desc: "Creates order with status Pending." },
+  { num: "07", step: "Payment", desc: "Verifies payment validation." },
+  { num: "08", step: "Completed", desc: "Order triggers profile CRM changes." },
+  { num: "09", step: "Reward Point", desc: "Awards points dynamically to account." },
+  { num: "10", step: "Tier Upgrade", desc: "Promotes user tier level (e.g. Gold)." },
+  { num: "11", step: "Voucher", desc: "Claims special discount reward vouchers." },
+  { num: "12", step: "Repeat Purchase", desc: "Returns for recurring fashion styles." },
+  { num: "13", step: "Retention", desc: "Retained via automation campaign triggers." }
 ];
 
-const heroVideoUrl = "https://www.shutterstock.com/shutterstock/videos/4034527353/preview/stock-footage-tromso-norway-people-at-storgata-main-pedestrian-shopping-street-in-the-city-center.mp4";
-
-const heroSlides = [
-  { id: 0, tag: "BUIQ CRM Platform", headline: "Manage your fashion", italic: "business with confidence", desc: "The unified CRM and store operations platform built specifically for modern fashion and lifestyle brands. Connect customer relationships, inventory analytics, and orders in one single experience." },
-  { id: 1, tag: "Data-Driven Insights", headline: "Real-time retail", italic: "and product analytics", desc: "Track sales performance, optimize your stock levels, and deliver personalized customer journeys. Make informed business decisions with quiet, precise, and powerful CRM features." },
-  { id: 2, tag: "Direct-to-Customer", headline: "Build deeper client", italic: "relationships easily", desc: "Understand buyer preferences, segment your audience, and coordinate orders seamlessly. Elevate your brand operations to match the premium quality of your collections." }
+const brandTestimonials = [
+  {
+    quote: "Aesthetics are top notch! I got 85 loyalty points on my very first Silk Dress order, and the delivery to Jakarta was incredibly fast.",
+    author: "Rissa Handayani",
+    role: "Premium Member",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop"
+  },
+  {
+    quote: "The loyalty point automation is seamless. I was automatically upgraded to Gold membership tier after my third transaction completed.",
+    author: "Bimo Wicaksono",
+    role: "Gold VIP Member",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop"
+  },
+  {
+    quote: "Highly recommended boutique! Customer service responds instantly, and the exclusive discounts for Silver tier are great.",
+    author: "Safira Putri",
+    role: "Silver Member",
+    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop"
+  }
 ];
 
-// ─── COMPONENT ───────────────────────────────────────────────────────────────
+const fallbackImg = "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=500&auto=format&fit=crop";
+
+const fallbackProducts = [
+  {
+    id: 1,
+    product_code: "PRD-0001",
+    product_name: "Classic Silk Evening Dress",
+    category: "Dress",
+    price: 1250000,
+    stock: 15,
+    image_url: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600&auto=format&fit=crop",
+    status: "Available",
+    reward_points: 120
+  },
+  {
+    id: 2,
+    product_code: "PRD-0002",
+    product_name: "Premium Leather Shoulder Bag",
+    category: "Bag",
+    price: 1890000,
+    stock: 8,
+    image_url: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=600&auto=format&fit=crop",
+    status: "Available",
+    reward_points: 180
+  },
+  {
+    id: 3,
+    product_code: "PRD-0003",
+    product_name: "Minimalist Gold Necklace",
+    category: "Accessories",
+    price: 750000,
+    stock: 20,
+    image_url: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&auto=format&fit=crop",
+    status: "Available",
+    reward_points: 75
+  },
+  {
+    id: 4,
+    product_code: "PRD-0004",
+    product_name: "Suede High Heel Shoes",
+    category: "Shoes",
+    price: 1450000,
+    stock: 4,
+    image_url: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=600&auto=format&fit=crop",
+    status: "Available",
+    reward_points: 140
+  },
+  {
+    id: 5,
+    product_code: "PRD-0005",
+    product_name: "Oversized Cashmere Coat",
+    category: "Fashion",
+    price: 2450000,
+    stock: 6,
+    image_url: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=600&auto=format&fit=crop",
+    status: "Available",
+    reward_points: 250
+  },
+  {
+    id: 6,
+    product_code: "PRD-0006",
+    product_name: "Tailored Slim Fit Blazer",
+    category: "Fashion",
+    price: 1150000,
+    stock: 12,
+    image_url: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=600&auto=format&fit=crop",
+    status: "Available",
+    reward_points: 110
+  }
+];
+
+// ─── ANIMATED COUNTER COMPONENT ──────────────────────────────────────────────
+function AnimatedCounter({ value, suffix = "" }) {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          const controls = animate(0, value, {
+            duration: 2,
+            ease: "easeOut",
+            onUpdate(val) {
+              node.textContent = Math.round(val).toLocaleString() + suffix;
+            }
+          });
+          observer.unobserve(node);
+          return () => controls.stop();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [value, suffix]);
+
+  return <span ref={ref} className="font-mono font-black text-slate-900 dark:text-white">0{suffix}</span>;
+}
 
 export default function LandingPage() {
-  const [activeTab,          setActiveTab         ] = useState("all");
-  const [currentTestimonial, setCurrentTestimonial] = useState(0);
-  const [currentSlide,       setCurrentSlide      ] = useState(0);
-  const [scrolled,           setScrolled          ] = useState(false);
-  const [mobileMenuOpen,     setMobileMenuOpen    ] = useState(false);
-  const [cartCount,          setCartCount         ] = useState(0);
-  const [showNotification,   setShowNotification  ] = useState(false);
-  const [notificationMsg,    setNotificationMsg   ] = useState("");
-  const [contactForm,        setContactForm       ] = useState({ name: "", email: "", message: "" });
-  const [formSubmitted,      setFormSubmitted      ] = useState(false);
-  const [showScrollTop,      setShowScrollTop     ] = useState(false);
-  const [activeHotspot,      setActiveHotspot     ] = useState(0);
-  const [activeNavId,        setActiveNavId       ] = useState("");
-  const [chatOpen,           setChatOpen          ] = useState(false);
-  const [chatInput,          setChatInput         ] = useState("");
-  const [chatMessages,       setChatMessages      ] = useState([{ sender: "bot", text: "Welcome to BUIQ CRM Support. How can I assist you with your brand operations today?" }]);
-  const [isTyping,           setIsTyping          ] = useState(false);
-  const [videoError,         setVideoError        ] = useState(false);
-
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const isLoggedIn = !!user;
+
+  // state variables
+  const [products, setProducts] = useState([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [cart, setCart] = useState([]);
+  const [cartOpen, setCartOpen] = useState(false);
+  
+  // Search Autocomplete state (Supabase powered)
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
+
+  // Real-time statistics from Supabase
+  const [liveStats, setLiveStats] = useState({ members: 0, orders: 0, products: 0, satisfaction: 99 });
+
+  // Modal and checkout actions
+  const [checkoutProduct, setCheckoutProduct] = useState(null);
+  const [checkoutQty, setCheckoutQty] = useState(1);
+  const [submittingCheckout, setSubmittingCheckout] = useState(false);
+  const [detailProduct, setDetailProduct] = useState(null);
+
+  // visual state
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeTestimonial, setActiveTestimonial] = useState(0);
+  const [toastMsg, setToastMsg] = useState("");
+  const [megaMenuOpen, setMegaMenuOpen] = useState(false);
+
+  // Fetch real products from Supabase
+  useEffect(() => {
+    async function getProducts() {
+      try {
+        setLoadingProducts(true);
+        const { data, error } = await supabase
+          .from("products")
+          .select("*")
+          .order("id", { ascending: true });
+
+        if (error) throw error;
+        if (data && data.length > 0) {
+          setProducts(data);
+        } else {
+          setProducts(fallbackProducts);
+        }
+      } catch (err) {
+        console.error("Error fetching products:", err);
+        setProducts(fallbackProducts);
+      } finally {
+        setLoadingProducts(false);
+      }
+    }
+    getProducts();
+  }, []);
+
+  // Fetch live statistics from Supabase
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const { count: customerCount } = await supabase
+          .from("customers")
+          .select("*", { count: "exact", head: true });
+        
+        const { count: ordersCount } = await supabase
+          .from("orders")
+          .select("*", { count: "exact", head: true });
+
+        const { count: productsCount } = await supabase
+          .from("products")
+          .select("*", { count: "exact", head: true });
+
+        setLiveStats({
+          members: customerCount || 1284,
+          orders: ordersCount || 349,
+          products: productsCount || 85,
+          satisfaction: 99
+        });
+      } catch (err) {
+        console.error("Error fetching realtime statistics:", err);
+      }
+    }
+    fetchStats();
+  }, []);
+
+  // Supabase Autocomplete Search query with debouncer
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    const delayDebounce = setTimeout(async () => {
+      try {
+        setSearchLoading(true);
+        const { data, error } = await supabase
+          .from("products")
+          .select("*")
+          .ilike("product_name", `%${searchQuery}%`)
+          .limit(6);
+
+        if (!error && data) {
+          setSearchResults(data);
+        }
+      } catch (err) {
+        console.error("Autocomplete search error:", err);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [searchQuery]);
+
+  // scroll listener for sticky header
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 40);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // auto scroll testimonials
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveTestimonial((prev) => (prev + 1) % brandTestimonials.length);
+    }, 7000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Toast notifier helper
+  const showToast = (msg) => {
+    setToastMsg(msg);
+    setTimeout(() => {
+      setToastMsg("");
+    }, 3500);
+  };
+
+  // add to cart
+  const handleAddToCart = (product) => {
+    setCart((prevCart) => {
+      const existing = prevCart.find((item) => item.product.id === product.id);
+      if (existing) {
+        return prevCart.map((item) =>
+          item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+        );
+      }
+      return [...prevCart, { product, quantity: 1 }];
+    });
+    showToast(`${product.product_name} ditambahkan ke Cart.`);
+  };
+
+  // update cart quantity
+  const handleUpdateQty = (prodId, delta) => {
+    setCart((prevCart) =>
+      prevCart
+        .map((item) => {
+          if (item.product.id === prodId) {
+            const nextQty = item.quantity + delta;
+            return { ...item, quantity: nextQty };
+          }
+          return item;
+        })
+        .filter((item) => item.quantity > 0)
+    );
+  };
+
+  // checkout actions logic
+  const handleOpenCheckout = (product, quantity) => {
+    if (!user) {
+      showToast("Silakan login sebagai Member untuk melakukan pembelian.");
+      setTimeout(() => {
+        navigate("/login");
+      }, 1500);
+      return;
+    }
+    if (user.role !== "member") {
+      showToast("Hanya Member yang dapat melakukan transaksi.");
+      return;
+    }
+    setCheckoutProduct(product);
+    setCheckoutQty(quantity || 1);
+  };
+
+  const handleConfirmCheckout = async () => {
+    if (!user || user.role !== "member") return;
+    try {
+      setSubmittingCheckout(true);
+      // Fetch customer ID
+      const { data: customer, error: custErr } = await supabase
+        .from("customers")
+        .select("id")
+        .eq("email", user.email)
+        .single();
+
+      if (custErr || !customer) {
+        throw new Error("Customer profile not found. Please re-login.");
+      }
+
+      const orderPayload = {
+        customer_id: customer.id,
+        product_id: checkoutProduct.id,
+        quantity: checkoutQty,
+        total_price: parseFloat((checkoutProduct.price * checkoutQty).toFixed(2)),
+        status: "Pending" // Automatically triggers loyalty updates via DB trigger
+      };
+
+      await orderService.create(orderPayload);
+      showToast(`Pesanan ${checkoutProduct.product_name} berhasil dibuat! (Status: Pending)`);
+      
+      // Clear cart of this item if it existed in the cart
+      setCart((prev) => prev.filter((item) => item.product.id !== checkoutProduct.id));
+      setCheckoutProduct(null);
+    } catch (err) {
+      console.error(err);
+      showToast(err.message || "Gagal membuat order.");
+    } finally {
+      setSubmittingCheckout(false);
+    }
+  };
+
+  // checkout all cart items in a loop
+  const handleCartCheckout = async () => {
+    if (!user) {
+      showToast("Silakan login sebagai Member untuk melakukan pembelian.");
+      setTimeout(() => navigate("/login"), 1500);
+      return;
+    }
+    if (user.role !== "member") {
+      showToast("Hanya Member yang dapat melakukan transaksi.");
+      return;
+    }
+    if (cart.length === 0) return;
+
+    try {
+      setSubmittingCheckout(true);
+      const { data: customer, error: custErr } = await supabase
+        .from("customers")
+        .select("id")
+        .eq("email", user.email)
+        .single();
+
+      if (custErr || !customer) {
+        throw new Error("Customer profile not found.");
+      }
+
+      for (const item of cart) {
+        const orderPayload = {
+          customer_id: customer.id,
+          product_id: item.product.id,
+          quantity: item.quantity,
+          total_price: parseFloat((item.product.price * item.quantity).toFixed(2)),
+          status: "Pending"
+        };
+        await orderService.create(orderPayload);
+      }
+
+      showToast("Checkout keranjang berhasil! Semua order berstatus Pending.");
+      setCart([]);
+      setCartOpen(false);
+    } catch (err) {
+      console.error(err);
+      showToast("Gagal memproses checkout keranjang.");
+    } finally {
+      setSubmittingCheckout(false);
+    }
+  };
+
+  const scrollToSection = (id) => {
+    setMobileMenuOpen(false);
+    const element = document.getElementById(id);
+    if (element) {
+      const offset = 80;
+      const bodyRect = document.body.getBoundingClientRect().top;
+      const elementRect = element.getBoundingClientRect().top;
+      const elementPosition = elementRect - bodyRect;
+      const offsetPosition = elementPosition - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth",
+      });
+    }
+  };
 
   const handleLogout = async () => {
     try {
       await logout();
-      setMobileMenuOpen(false);
+      showToast("Logout sukses.");
+      navigate("/");
     } catch (err) {
-      console.error("LandingPage logout error:", err);
+      console.error(err);
     }
   };
-
-  const chatEndRef = useRef(null);
-  const videoRef   = useRef(null);
-
-  // Scroll handling
-  useEffect(() => {
-    const onScroll = () => {
-      setScrolled(window.scrollY > 40);
-      setShowScrollTop(window.scrollY > 500);
-      const pos = window.scrollY + 160;
-      for (const item of navItems) {
-        const el = document.getElementById(item.id);
-        if (el && pos >= el.offsetTop && pos < el.offsetTop + el.offsetHeight) {
-          setActiveNavId(item.id);
-          break;
-        }
-      }
-    };
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  // Hero slide autoplay
-  useEffect(() => {
-    const t = setInterval(() => setCurrentSlide(p => (p + 1) % heroSlides.length), 8000);
-    return () => clearInterval(t);
-  }, []);
-
-  // Testimonial autoplay
-  useEffect(() => {
-    const t = setInterval(() => setCurrentTestimonial(p => (p + 1) % testimonials.length), 9000);
-    return () => clearInterval(t);
-  }, []);
-
-  // Chat scroll
-  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatMessages, isTyping]);
-
-  // Swap video src on slide change
-
-  const scrollToSection = (id) => {
-    setMobileMenuOpen(false);
-    setActiveNavId(id);
-    const el = document.getElementById(id);
-    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 96, behavior: "smooth" });
-  };
-
-  const handleAddToBag = (name) => {
-    setCartCount(p => p + 1);
-    setNotificationMsg(`CRM Event: ${name} added to cart (Simulated Checkout Logged).`);
-    setShowNotification(true);
-    setTimeout(() => setShowNotification(false), 3200);
-  };
-
-  const handleContactSubmit = (e) => {
-    e.preventDefault();
-    setFormSubmitted(true);
-    setContactForm({ name: "", email: "", message: "" });
-    setTimeout(() => setFormSubmitted(false), 4000);
-  };
-
-  const formatIDR = (n) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n);
-
-  const filteredProducts = activeTab === "all" ? products : products.filter(p => p.category === activeTab);
-
-  const triggerBotResponse = (text) => {
-    setIsTyping(true);
-    const t = text.toLowerCase();
-    let reply = "I'm here to help you explore BUIQ CRM. Ask me about features, integrations, pricing, or the live store demo.";
-    if (t.includes("feature") || t.includes("show") || t.includes("crm")) {
-      reply = "BUIQ CRM Core Features:\n• VIP Loyalty & Member Tiering\n• Real-Time Inventory Turn Tracking\n• Omnichannel Sales Operations\n• Actionable Customer Insights\n\nScroll to the 'Why Choose BUIQ' section to learn more.";
-    } else if (t.includes("demo") || t.includes("shop") || t.includes("cat")) {
-      reply = "The catalog below is a live demo of a retail shop powered by BUIQ CRM. Try adding items to the bag to see how BUIQ registers real-time orders!";
-    } else if (t.includes("integrat") || t.includes("shopify")) {
-      reply = "BUIQ integrates seamlessly with Shopify, WooCommerce, and offline POS systems to sync all your customer profiles and sales streams.";
-    } else if (t.includes("pricing") || t.includes("cost")) {
-      reply = "We offer flexible pricing tiers for growing boutiques and enterprise brands. Contact our sales team using the contact form below for a custom quote.";
-    } else if (t.includes("hi") || t.includes("hello")) {
-      reply = "Hello! Welcome to BUIQ CRM. How can I help you optimize your retail brand operations today?";
-    }
-    setTimeout(() => { setIsTyping(false); setChatMessages(p => [...p, { sender: "bot", text: reply }]); }, 750);
-  };
-
-  const handleSendChat = (e) => {
-    e.preventDefault();
-    if (!chatInput.trim()) return;
-    const msg = chatInput;
-    setChatMessages(p => [...p, { sender: "user", text: msg }]);
-    setChatInput("");
-    triggerBotResponse(msg);
-  };
-
-  const handleQuickAction = (label, query) => {
-    setChatMessages(p => [...p, { sender: "user", text: label }]);
-    triggerBotResponse(query);
-  };
-
-  // ── RENDER ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-white text-[#0F172A] antialiased selection:bg-[#2B7FFF] selection:text-white">
-
-      {/* Toast */}
+    <div className="min-h-screen bg-slate-50 text-slate-800 antialiased selection:bg-primary selection:text-white font-sans">
+      
+      {/* Toast Notification Banner */}
       <AnimatePresence>
-        {showNotification && (
-          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
-            className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] bg-[#0F172A] text-white text-[10px] font-semibold tracking-widest uppercase px-6 py-3.5 rounded-full shadow-xl flex items-center gap-2.5 border border-white/5">
-            <MdCheckCircle className="text-[#2B7FFF]" size={14} />
-            {notificationMsg}
+        {toastMsg && (
+          <motion.div
+            initial={{ opacity: 0, y: -50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -50, scale: 0.9 }}
+            className="fixed top-24 left-1/2 -translate-x-1/2 z-[60] bg-slate-900 text-white text-xs font-semibold px-6 py-3.5 rounded-full shadow-2xl flex items-center gap-3 border border-white/10"
+          >
+            <span className="w-2 h-2 rounded-full bg-primary animate-ping" />
+            <span>{toastMsg}</span>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Scroll top */}
-      <AnimatePresence>
-        {showScrollTop && (
-          <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      {/* ── STICKY GLASSMORPHISM NAVBAR ── */}
+      <header
+        className={`fixed top-0 inset-x-0 z-40 transition-all duration-300 ${
+          scrolled
+            ? "bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 py-3.5 shadow-md shadow-slate-100/50"
+            : "bg-transparent py-5"
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+          {/* Logo */}
+          <Link
+            to="/"
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="fixed bottom-28 right-8 z-40 w-11 h-11 bg-white border border-slate-200 rounded-full flex items-center justify-center shadow-md hover:border-[#2B7FFF] hover:text-[#2B7FFF] transition-all">
-            <MdKeyboardArrowUp size={20} />
-          </motion.button>
-        )}
-      </AnimatePresence>
-
-      {/* ── Chat widget ─────────────────────────────────────────────────────── */}
-      <div className="fixed bottom-8 right-8 z-50 flex flex-col items-end">
-        <AnimatePresence>
-          {chatOpen && (
-            <motion.div initial={{ opacity: 0, y: 12, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 12, scale: 0.97 }}
-              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-              className="bg-white border border-slate-200 shadow-2xl rounded-2xl w-[340px] sm:w-[360px] h-[480px] flex flex-col mb-4 overflow-hidden">
-              {/* Header */}
-              <div className="bg-[#0F172A] px-5 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-full bg-[#2B7FFF] flex items-center justify-center text-white text-[10px] font-bold">AI</div>
-                  <div>
-                    <p className="text-[11px] font-bold tracking-wider text-white uppercase">BUIQ Assistant</p>
-                    <p className="text-[9px] text-[#2B7FFF] font-medium tracking-wide mt-0.5">Online now</p>
-                  </div>
-                </div>
-                <button onClick={() => setChatOpen(false)} className="text-slate-400 hover:text-white transition-colors"><MdClose size={18} /></button>
-              </div>
-
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#F8FAFC]">
-                {chatMessages.map((m, i) => (
-                  <div key={i} className={`flex ${m.sender === "user" ? "justify-end" : "justify-start"}`}>
-                    <div className={`max-w-[82%] rounded-2xl px-4 py-2.5 text-xs leading-relaxed whitespace-pre-line ${m.sender === "user" ? "bg-[#2B7FFF] text-white" : "bg-white text-[#0F172A] border border-slate-100 shadow-sm"}`}>
-                      {m.text}
-                    </div>
-                  </div>
-                ))}
-                {isTyping && (
-                  <div className="flex justify-start">
-                    <div className="bg-white border border-slate-100 rounded-2xl px-4 py-3 flex items-center gap-1 shadow-sm">
-                      {[0,200,400].map(d => <span key={d} style={{ animationDelay: `${d}ms` }} className="w-1.5 h-1.5 bg-[#2B7FFF] rounded-full animate-bounce" />)}
-                    </div>
-                  </div>
-                )}
-                <div ref={chatEndRef} />
-              </div>
-
-              {/* Quick actions */}
-              <div className="px-4 py-2.5 bg-white border-t border-slate-100 flex flex-wrap gap-1.5">
-                {["CRM Features", "Live Demo", "Integrations", "Pricing", "Contact Sales"].map(a => (
-                  <button key={a} onClick={() => handleQuickAction(a, a.toLowerCase())}
-                    className="bg-[#F8FAFC] hover:bg-[#EAF3FF] hover:text-[#2B7FFF] text-[#0F172A] border border-slate-200 px-2.5 py-1 rounded-full text-[9px] font-semibold uppercase tracking-wider transition-colors">
-                    {a}
-                  </button>
-                ))}
-              </div>
-
-              {/* Input */}
-              <form onSubmit={handleSendChat} className="px-3 py-3 border-t border-slate-100 flex gap-2 bg-white">
-                <input type="text" placeholder="Ask anything…" value={chatInput} onChange={e => setChatInput(e.target.value)}
-                  className="flex-1 px-3 py-2 text-xs border border-slate-200 rounded-xl outline-none focus:border-[#2B7FFF] placeholder:text-slate-300" />
-                <button type="submit" className="w-8 h-8 rounded-xl bg-[#2B7FFF] hover:bg-[#1a6ee8] text-white flex items-center justify-center transition-colors">
-                  <MdSend size={13} />
-                </button>
-              </form>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        <button onClick={() => setChatOpen(!chatOpen)}
-          className="w-13 h-13 w-[52px] h-[52px] bg-[#2B7FFF] hover:bg-[#1a6ee8] text-white rounded-full flex items-center justify-center shadow-xl shadow-[#2B7FFF]/30 transition-all">
-          {chatOpen ? <MdClose size={20} /> : <MdChat size={20} />}
-        </button>
-      </div>
-
-      {/* ── Navigation ──────────────────────────────────────────────────────── */}
-      <header className="fixed top-4 inset-x-0 z-40 px-4 sm:px-8">
-        <div className={`max-w-7xl mx-auto px-6 py-4 flex items-center justify-between rounded-full border transition-all duration-300 ${
-          scrolled ? "bg-white/85 border-slate-300/80 shadow-[0_8px_30px_rgb(0,0,0,0.06)]" : "bg-white/75 border-slate-200/60 shadow-[0_4px_20px_rgb(0,0,0,0.02)]"
-        } backdrop-blur-md`}>
-
-          <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="font-['Playfair_Display',serif] text-xl font-bold tracking-[0.18em] text-[#0F172A] hover:text-[#2B7FFF] transition-colors">
+            className="font-serif text-xl sm:text-2xl font-black tracking-[0.25em] text-slate-900 hover:text-primary transition-colors uppercase"
+          >
             BUIQ
-          </button>
+          </Link>
 
-          <nav className="hidden lg:flex items-center gap-8">
-            {navItems.map(item => (
-              <button key={item.id} onClick={() => scrollToSection(item.id)}
-                className={`text-[16px] font-semibold tracking-[-0.01em] py-1.5 relative transition-colors hover:text-[#2B7FFF] ${activeNavId === item.id ? "text-[#2B7FFF]" : "text-slate-600"}`}>
-                {item.label}
-                {activeNavId === item.id && (
-                  <motion.span layoutId="navUnderline" className="absolute -bottom-1 inset-x-0 h-[2px] bg-[#2B7FFF] rounded-full" transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }} />
-                )}
+          {/* Desktop Nav Items */}
+          <nav className="hidden md:flex items-center gap-7">
+            <button
+              onClick={() => scrollToSection("home")}
+              className="text-xs font-bold uppercase tracking-wider text-slate-700 hover:text-primary transition-colors cursor-pointer"
+            >
+              Home
+            </button>
+
+            {/* Mega Menu Toggle */}
+            <div
+              className="relative"
+              onMouseEnter={() => setMegaMenuOpen(true)}
+              onMouseLeave={() => setMegaMenuOpen(false)}
+            >
+              <button
+                className="text-xs font-bold uppercase tracking-wider text-slate-700 hover:text-primary transition-colors flex items-center gap-1 cursor-pointer py-2"
+              >
+                Products <MdKeyboardArrowDown className="text-sm" />
               </button>
-            ))}
+
+              {/* Mega Menu Drops */}
+              <AnimatePresence>
+                {megaMenuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 15 }}
+                    transition={{ duration: 0.25 }}
+                    className="absolute left-1/2 -translate-x-1/2 top-full w-[600px] bg-white border border-slate-200 shadow-2xl rounded-2xl p-6 grid grid-cols-3 gap-6"
+                  >
+                    <div className="col-span-2 space-y-3">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">
+                        Collections Categories
+                      </p>
+                      <div className="grid grid-cols-2 gap-3">
+                        {[
+                          { label: "New Arrival", filter: "All" },
+                          { label: "Dress", filter: "Dress" },
+                          { label: "Outer", filter: "Fashion" },
+                          { label: "Shoes", filter: "Shoes" },
+                          { label: "Bag", filter: "Bag" },
+                          { label: "Accessories", filter: "Accessories" },
+                          { label: "Membership", action: "membership" },
+                          { label: "Promo", filter: "Fashion" },
+                        ].map((m) => (
+                          <button
+                            key={m.label}
+                            onClick={() => {
+                              if (m.action) {
+                                scrollToSection(m.action);
+                              } else {
+                                setSelectedCategory(m.filter);
+                                scrollToSection("products");
+                              }
+                              setMegaMenuOpen(false);
+                            }}
+                            className="text-left text-xs font-semibold text-slate-650 hover:text-primary transition-all p-1.5 rounded-lg hover:bg-slate-50"
+                          >
+                            {m.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="bg-primary/5 rounded-xl p-4 flex flex-col justify-between border border-primary/10">
+                      <div>
+                        <span className="bg-primary text-white text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md">
+                          Campaign
+                        </span>
+                        <h4 className="text-xs font-extrabold text-slate-900 mt-2.5">
+                          New Season Drops
+                        </h4>
+                        <p className="text-[10px] text-slate-450 mt-1 leading-relaxed">
+                          Get double loyalty point multiplier for all dress purchases.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setSelectedCategory("Dress");
+                          scrollToSection("products");
+                          setMegaMenuOpen(false);
+                        }}
+                        className="text-[9px] font-bold text-primary flex items-center gap-1 mt-4 hover:underline"
+                      >
+                        Explore Now →
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <button
+              onClick={() => scrollToSection("membership")}
+              className="text-xs font-bold uppercase tracking-wider text-slate-700 hover:text-primary transition-colors cursor-pointer"
+            >
+              Membership
+            </button>
+            <button
+              onClick={() => scrollToSection("features")}
+              className="text-xs font-bold uppercase tracking-wider text-slate-700 hover:text-primary transition-colors cursor-pointer"
+            >
+              Features
+            </button>
+            <button
+              onClick={() => scrollToSection("about")}
+              className="text-xs font-bold uppercase tracking-wider text-slate-700 hover:text-primary transition-colors cursor-pointer"
+            >
+              About
+            </button>
+            <button
+              onClick={() => scrollToSection("contact")}
+              className="text-xs font-bold uppercase tracking-wider text-slate-700 hover:text-primary transition-colors cursor-pointer"
+            >
+              Contact
+            </button>
           </nav>
 
-          <div className="hidden lg:flex items-center gap-6">
-            <button onClick={() => scrollToSection("catalog")} className="relative text-[#0F172A] hover:text-[#2B7FFF] transition-colors p-1">
-              <MdShoppingBag size={21} />
-              {cartCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#2B7FFF] text-white text-[8px] font-bold rounded-full flex items-center justify-center">{cartCount}</span>}
+          {/* Right Side Options */}
+          <div className="hidden md:flex items-center gap-5">
+            
+            {/* Autocomplete Search input */}
+            <div className="relative">
+              <div className="flex items-center bg-slate-100 rounded-xl px-3 py-1.5 border border-slate-200 focus-within:border-primary/50 focus-within:bg-white transition-all w-48 focus-within:w-64">
+                <MdSearch className="text-slate-400 text-lg mr-1.5" />
+                <input
+                  type="text"
+                  placeholder="Search Products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
+                  className="bg-transparent border-none text-[11px] outline-none w-full text-slate-700 placeholder:text-slate-400"
+                />
+              </div>
+
+              {/* Autocomplete Results Box */}
+              <AnimatePresence>
+                {searchFocused && (searchQuery.trim().length > 0) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="absolute right-0 top-full mt-2 w-80 bg-white border border-slate-200 shadow-2xl rounded-2xl p-3 space-y-2 z-50 overflow-hidden"
+                  >
+                    {searchLoading ? (
+                      <p className="text-[10px] text-slate-400 text-center py-3">Searching live stock...</p>
+                    ) : searchResults.length === 0 ? (
+                      <p className="text-[10px] text-slate-400 text-center py-3">No product matched "{searchQuery}"</p>
+                    ) : (
+                      <div className="space-y-1">
+                        {searchResults.map((res) => (
+                          <button
+                            key={res.id}
+                            onMouseDown={() => setDetailProduct(res)}
+                            className="w-full flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl transition-all text-left"
+                          >
+                            <img
+                              src={res.image_url || fallbackImg}
+                              alt=""
+                              className="w-9 h-9 object-cover rounded-lg bg-slate-100 border border-slate-100"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[10.5px] font-bold text-slate-850 truncate">{res.product_name}</p>
+                              <p className="text-[9.5px] text-slate-450 mt-0.5">Rp {parseFloat(res.price).toLocaleString()}</p>
+                            </div>
+                            <span className="text-[9px] bg-amber-50 text-amber-600 font-bold px-1.5 py-0.5 rounded-md border border-amber-100 shrink-0">
+                              +{res.reward_points} Pts
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Shopping Cart Icon with Badge */}
+            <button
+              onClick={() => setCartOpen(true)}
+              className="relative p-2 rounded-xl hover:bg-slate-100 text-slate-700 transition-colors"
+            >
+              <MdShoppingCart className="text-xl" />
+              {cart.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-[9px] font-black rounded-full flex items-center justify-center border border-white">
+                  {cart.reduce((sum, item) => sum + item.quantity, 0)}
+                </span>
+              )}
             </button>
-            {isLoggedIn ? (
-              <div className="flex items-center gap-4">
-                <button onClick={handleLogout} className="text-xs font-semibold text-slate-500 hover:text-[#2B7FFF] transition-colors cursor-pointer">
-                  Logout
-                </button>
-                <Link to="/dashboard" className="bg-[#2B7FFF] hover:bg-[#2B7FFF]/80 text-white text-xs font-semibold tracking-wide px-6 py-3 rounded-full transition-all duration-300 shadow-md shadow-[#2B7FFF]/10">
+
+            {/* Notification Badge */}
+            <div className="relative p-2 rounded-xl text-slate-700">
+              <MdNotifications className="text-xl" />
+              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border border-white" />
+            </div>
+
+            {/* Auth Actions */}
+            {user ? (
+              <div className="flex items-center gap-3 border-l border-slate-200 pl-4">
+                <span className="text-[11px] font-semibold text-slate-500">
+                  Hi, {user.full_name.split(" ")[0]}
+                </span>
+                <Link
+                  to={user.role === "admin" ? "/dashboard" : "/member-dashboard"}
+                  className="bg-primary hover:bg-primary-hover text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-md shadow-primary/10"
+                >
                   Dashboard
                 </Link>
+                <button
+                  onClick={handleLogout}
+                  className="text-[11px] font-bold text-slate-400 hover:text-rose-600 transition-colors"
+                >
+                  Logout
+                </button>
               </div>
             ) : (
-              <Link to="/login" className="bg-[#0F172A] hover:bg-[#2B7FFF] text-white text-xs font-semibold tracking-wide px-6 py-3 rounded-full transition-all duration-300 shadow-md shadow-[#0F172A]/10 hover:shadow-[#2B7FFF]/20">
-                Login
-              </Link>
+              <div className="flex items-center gap-2 border-l border-slate-200 pl-4">
+                <Link
+                  to="/login"
+                  className="text-xs font-bold px-3 py-2 text-slate-650 hover:text-primary transition-all"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="bg-slate-900 hover:bg-slate-950 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-md"
+                >
+                  Register
+                </Link>
+              </div>
             )}
           </div>
 
-          {/* Mobile */}
-          <div className="flex items-center gap-4 lg:hidden">
-            <button onClick={() => scrollToSection("catalog")} className="relative text-[#0F172A] p-1">
-              <MdShoppingBag size={22} />
-              {cartCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#2B7FFF] text-white text-[8px] font-bold rounded-full flex items-center justify-center">{cartCount}</span>}
+          {/* Mobile Actions */}
+          <div className="flex items-center gap-3 md:hidden">
+            <button
+              onClick={() => setCartOpen(true)}
+              className="relative p-2 rounded-xl text-slate-700"
+            >
+              <MdShoppingCart className="text-xl" />
+              {cart.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-4.5 h-4.5 bg-primary text-white text-[8px] font-black rounded-full flex items-center justify-center">
+                  {cart.reduce((sum, item) => sum + item.quantity, 0)}
+                </span>
+              )}
             </button>
-            <button onClick={() => setMobileMenuOpen(true)} className="p-1"><MdMenu size={24} className="text-[#0F172A]" /></button>
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="p-1 rounded-xl text-slate-800"
+            >
+              <MdMenu className="text-2xl" />
+            </button>
           </div>
         </div>
       </header>
 
-      {/* Mobile drawer */}
+      {/* Mobile Drawer Menu */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 0.35 }} exit={{ opacity: 0 }} onClick={() => setMobileMenuOpen(false)} className="fixed inset-0 z-50 bg-black" />
-            <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "tween", duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-              className="fixed inset-y-0 right-0 z-50 w-72 bg-white p-8 shadow-2xl flex flex-col">
-              <div className="flex items-center justify-between mb-12">
-                <span className="font-['Playfair_Display',serif] text-lg font-bold tracking-[0.22em]">BUIQ</span>
-                <button onClick={() => setMobileMenuOpen(false)}><MdClose size={22} className="text-slate-400" /></button>
-              </div>
-              <div className="flex flex-col gap-1 mb-auto">
-                {navItems.map(item => (
-                  <button key={item.id} onClick={() => scrollToSection(item.id)}
-                    className="text-left text-[13px] font-medium text-slate-650 hover:text-[#2B7FFF] py-3 border-b border-slate-50 transition-colors">
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-              {isLoggedIn ? (
-                <div className="space-y-3 mt-8">
-                  <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}
-                    className="w-full bg-[#2B7FFF] hover:bg-[#2B7FFF]/80 text-white text-[10px] font-semibold tracking-[0.12em] py-3.5 rounded-full text-center transition-colors block">
-                    Dashboard
-                  </Link>
-                  <button onClick={handleLogout}
-                    className="w-full border border-slate-200 text-slate-500 hover:text-[#2B7FFF] text-[10px] font-semibold tracking-[0.12em] py-3.5 rounded-full text-center transition-colors block">
-                    Logout
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.4 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileMenuOpen(false)}
+              className="fixed inset-0 z-50 bg-black"
+            />
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "tween", duration: 0.3 }}
+              className="fixed inset-y-0 right-0 z-50 w-64 bg-white p-6 shadow-2xl flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-100">
+                  <span className="font-extrabold text-sm tracking-wider text-slate-950">
+                    BUIQ MENU
+                  </span>
+                  <button onClick={() => setMobileMenuOpen(false)}>
+                    <MdClose className="text-xl text-slate-400" />
                   </button>
                 </div>
-              ) : (
-                <Link to="/login" onClick={() => setMobileMenuOpen(false)}
-                  className="mt-8 w-full bg-[#0F172A] hover:bg-[#2B7FFF] text-white text-[10px] font-semibold tracking-[0.12em] py-3.5 rounded-full text-center transition-colors block">
-                  Login
-                </Link>
+
+                <div className="flex flex-col gap-3">
+                  {[
+                    { label: "Home", id: "home" },
+                    { label: "Products", id: "products" },
+                    { label: "Membership", id: "membership" },
+                    { label: "Features", id: "features" },
+                    { label: "About", id: "about" },
+                    { label: "Contact", id: "contact" }
+                  ].map((link) => (
+                    <button
+                      key={link.id}
+                      onClick={() => scrollToSection(link.id)}
+                      className="text-left text-xs font-bold text-slate-655 hover:text-primary py-2.5 transition-colors border-b border-slate-50 border-solid"
+                    >
+                      {link.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-slate-100 space-y-2">
+                {user ? (
+                  <>
+                    <Link
+                      to={user.role === "admin" ? "/dashboard" : "/member-dashboard"}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block w-full bg-primary text-white text-center py-2.5 rounded-xl text-xs font-bold shadow-md shadow-primary/15"
+                    >
+                      Go to Dashboard
+                    </Link>
+                    <button
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        handleLogout();
+                      }}
+                      className="block w-full border border-slate-200 text-slate-500 text-center py-2.5 rounded-xl text-xs font-bold"
+                    >
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      to="/login"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block w-full text-slate-700 text-center py-2.5 rounded-xl text-xs font-bold hover:bg-slate-50"
+                    >
+                      Login
+                    </Link>
+                    <Link
+                      to="/register"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block w-full bg-slate-950 text-white text-center py-2.5 rounded-xl text-xs font-bold"
+                    >
+                      Register
+                    </Link>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ── HERO SECTION WITH LUXURIOUS WHITE BACKGROUND & SIGNATURE BOUTIQUE IMAGE ── */}
+      <section
+        id="home"
+        className="relative h-screen min-h-[600px] flex items-center justify-center bg-[#FAF9F6] overflow-hidden"
+      >
+        {/* Subtle grid pattern background */}
+        <div className="absolute inset-0 bg-grid opacity-30 pointer-events-none" />
+
+        {/* Decorative subtle ambient lights */}
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[55%] rounded-full bg-primary/5 blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[45%] h-[50%] rounded-full bg-amber-500/5 blur-[120px]" />
+        
+        {/* Content with Framer Motion animations */}
+        <div className="relative z-20 max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center w-full">
+          
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="lg:col-span-7 space-y-6 text-left"
+          >
+            <div className="flex items-center gap-2">
+              <span className="w-8 h-0.5 bg-primary" />
+              <span className="text-[10px] font-bold tracking-[0.25em] uppercase text-primary">
+                BUIQ PLATFORM
+              </span>
+            </div>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif font-black text-slate-900 tracking-tight leading-[1.08]">
+              Elevate Your <br />
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-indigo-500">
+                Boutique Lifestyle
+              </span>
+            </h1>
+            <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-xl font-light">
+              Kelola boutique sekaligus nikmati Loyalty Membership terbaik. Dapatkan point loyalty reward otomatis dari setiap produk fashion premium kami.
+            </p>
+            <div className="flex flex-wrap gap-4 pt-2">
+              <button
+                onClick={() => scrollToSection("products")}
+                className="bg-primary hover:bg-primary-hover text-white text-xs font-bold px-8 py-4 rounded-xl shadow-lg shadow-primary/20 transition-all cursor-pointer"
+              >
+                Shop Now
+              </button>
+              <Link
+                to={user ? "/member-dashboard" : "/register"}
+                className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold px-8 py-4 rounded-xl transition-all shadow-sm"
+              >
+                Join Membership
+              </Link>
+            </div>
+          </motion.div>
+
+          {/* Right Side - Signature Boutique Image & Floating Cards */}
+          <div className="lg:col-span-5 relative w-full flex items-center justify-center hidden lg:block">
+            {/* Elegant Image Frame */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 1, delay: 0.2 }}
+              className="relative w-full max-w-[340px] aspect-[4/5] rounded-[2rem] overflow-hidden shadow-2xl border-4 border-white bg-white"
+            >
+              <img
+                src="/img/boutique_signature.png"
+                alt="Signature BUIQ Boutique"
+                className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/10 to-transparent" />
+            </motion.div>
+
+            {/* Total Members Card (Floating) */}
+            <motion.div
+              animate={{ y: [0, -8, 0] }}
+              transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
+              className="absolute top-8 -left-10 bg-white/95 backdrop-blur-md border border-slate-250/60 rounded-2xl p-4 shadow-xl text-left w-48 text-slate-800 z-30"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-base">
+                  <MdPeople />
+                </div>
+                <div>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase">Total Members</p>
+                  <p className="text-sm font-extrabold font-mono text-slate-900">
+                    {liveStats.members.toLocaleString()}+
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Today's Orders Card (Floating) */}
+            <motion.div
+              animate={{ y: [0, 8, 0] }}
+              transition={{ repeat: Infinity, duration: 4.5, ease: "easeInOut" }}
+              className="absolute bottom-16 -right-6 bg-white/95 backdrop-blur-md border border-slate-250/60 rounded-2xl p-4 shadow-xl text-left w-48 text-slate-800 z-30"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600 text-base">
+                  <MdReceiptLong />
+                </div>
+                <div>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase">Today's Orders</p>
+                  <p className="text-sm font-extrabold font-mono text-slate-900">
+                    {liveStats.orders.toLocaleString()}+
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Loyalty Points Card (Floating) */}
+            <motion.div
+              animate={{ y: [0, -6, 0] }}
+              transition={{ repeat: Infinity, duration: 4.2, ease: "easeInOut" }}
+              className="absolute -bottom-6 -left-6 bg-white/95 backdrop-blur-md border border-slate-250/60 rounded-2xl p-4 shadow-xl text-left w-48 text-slate-800 z-30"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-600 text-base">
+                  <MdStar />
+                </div>
+                <div>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase">Loyalty Points</p>
+                  <p className="text-sm font-extrabold font-mono text-slate-900">450K+ Pts</p>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── INTERACTIVE CATEGORY FILTER ── */}
+      <section className="py-20 bg-white border-b border-slate-100">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center max-w-xl mx-auto mb-12 space-y-2">
+            <p className="text-[9px] font-bold tracking-[0.25em] uppercase text-primary">
+              Curation Categories
+            </p>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
+              Browse Boutique Categories
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {categoriesList.map((cat) => {
+              const Icon = cat.icon;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => {
+                    setSelectedCategory(cat.id === selectedCategory ? "All" : cat.id);
+                    scrollToSection("products");
+                  }}
+                  className={`group p-6 rounded-2xl border text-center transition-all duration-300 cursor-pointer flex flex-col items-center justify-center space-y-4 ${
+                    selectedCategory === cat.id
+                      ? "border-primary bg-primary/5 shadow-md shadow-primary/5"
+                      : "border-slate-150 bg-slate-50 hover:bg-white hover:border-slate-350 hover:shadow-md"
+                  }`}
+                >
+                  <div
+                    className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                      selectedCategory === cat.id
+                        ? "bg-primary text-white"
+                        : "bg-white text-slate-700 shadow-sm group-hover:bg-primary group-hover:text-white"
+                    }`}
+                  >
+                    <Icon className="text-lg" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-850">{cat.name}</h4>
+                    <p className="text-[9px] text-slate-400 mt-1">{cat.desc}</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ── FEATURED PRODUCTS (6 ITEMS FROM SUPABASE) ── */}
+      <section id="products" className="py-24 bg-slate-50 border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+            <div className="space-y-2 text-left">
+              <p className="text-[9px] font-bold tracking-[0.25em] uppercase text-primary">
+                Live Store Collection
+              </p>
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
+                Featured Products Catalog
+              </h2>
+              <p className="text-xs text-slate-400 max-w-xl font-light">
+                Klik produk fashion premium di bawah untuk melihat rincian poin loyalitas atau melakukan transaksi.
+              </p>
+            </div>
+
+            {/* Filter buttons */}
+            <div className="flex flex-wrap gap-1.5 bg-slate-150 p-1 rounded-xl self-start md:self-end">
+              {["All", "Fashion", "Dress", "Shoes", "Bag", "Accessories"].map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                    selectedCategory === cat
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {loadingProducts ? (
+            <div className="py-12 text-center text-xs text-slate-400 font-semibold">
+              Loading boutique items...
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
+              {products
+                .filter((p) => selectedCategory === "All" || p.category.toLowerCase() === selectedCategory.toLowerCase())
+                .slice(0, 6)
+                .map((p, idx) => {
+                  // Determine dynamic badges based on product specs
+                  const isLowStock = p.stock <= 5;
+                  const isBestSeller = p.reward_points >= 120;
+                  const isNewArrival = p.id % 2 !== 0;
+                  const isDiscount = p.price >= 1500000;
+
+                  return (
+                    <div
+                      key={p.id}
+                      className="group bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-slate-350 transition-all duration-300 flex flex-col justify-between"
+                    >
+                      <div className="relative aspect-[3/4] bg-slate-100 overflow-hidden">
+                        <img
+                          src={p.image_url || fallbackImg}
+                          alt={p.product_name}
+                          onError={(e) => {
+                            e.target.src = fallbackImg;
+                          }}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+
+                        {/* Badges */}
+                        <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+                          <span className="bg-slate-900/80 backdrop-blur-md text-white text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md">
+                            {p.category}
+                          </span>
+                          {isLowStock && (
+                            <span className="bg-rose-50 text-rose-750 border border-rose-100 text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md">
+                              Low Stock
+                            </span>
+                          )}
+                          {isBestSeller && (
+                            <span className="bg-amber-50 text-amber-700 border border-amber-100 text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md">
+                              Best Seller
+                            </span>
+                          )}
+                          {isNewArrival && !isBestSeller && (
+                            <span className="bg-blue-50 text-blue-750 border border-blue-100 text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md">
+                              New Arrival
+                            </span>
+                          )}
+                          {isDiscount && (
+                            <span className="bg-emerald-50 text-emerald-700 border border-emerald-100 text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md">
+                              Member Discount
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="absolute top-3 right-3">
+                          <span className="bg-amber-500 text-white text-[9px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-sm">
+                            ★ {p.reward_points} Pts
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="p-5 flex-1 flex flex-col justify-between">
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-800 group-hover:text-primary transition-colors line-clamp-1">
+                            {p.product_name}
+                          </h4>
+                          <p className="text-[10px] text-slate-400 mt-0.5">Code: {p.product_code}</p>
+                        </div>
+
+                        <div className="mt-4 space-y-3.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-black text-slate-900">
+                              Rp {parseFloat(p.price).toLocaleString()}
+                            </span>
+                            <span className="text-[9px] text-slate-500 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">
+                              Stock: {p.stock}
+                            </span>
+                          </div>
+
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setDetailProduct(p)}
+                              className="flex-1 border border-slate-200 hover:border-slate-350 hover:bg-slate-50 text-slate-600 text-[10px] font-bold py-2.5 rounded-xl transition-all cursor-pointer text-center"
+                            >
+                              Detail
+                            </button>
+                            <button
+                              onClick={() => {
+                                handleAddToCart(p);
+                                handleOpenCheckout(p, 1);
+                              }}
+                              className="flex-1 bg-primary hover:bg-primary-hover text-white text-[10px] font-bold py-2.5 rounded-xl transition-all cursor-pointer text-center shadow-md shadow-primary/10"
+                            >
+                              Beli Sekarang
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ── WHY CHOOSE BUIQ (CRM FEATURE OVERVIEW) ── */}
+      <section id="features" className="py-24 bg-white border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center max-w-xl mx-auto mb-16 space-y-3">
+            <p className="text-[9px] font-bold tracking-[0.25em] uppercase text-primary">
+              Core CRM Systems
+            </p>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
+              Why Choose BUIQ?
+            </h2>
+            <p className="text-xs text-slate-400 leading-relaxed font-light">
+              BUIQ menggabungkan kemewahan butik fisik dengan kecanggihan sistem CRM otomatis untuk meningkatkan loyalitas dan retensi pelanggan Anda.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              {
+                icon: MdCardMembership,
+                title: "Loyalty Membership",
+                desc: "Sistem tiering Bronze, Silver, Gold, hingga Platinum dengan reward multiplier otomatis berdasarkan total poin."
+              },
+              {
+                icon: MdStar,
+                title: "Reward Points Program",
+                desc: "Kumpulkan poin loyalitas dari setiap transaksi yang dapat ditukarkan dengan welcome voucher & voucher khusus tier."
+              },
+              {
+                icon: MdInventory2,
+                title: "Inventory Management",
+                desc: "Pelacakan stok real-time dengan status 'Available', 'Low Stock', dan 'Out of Stock' untuk mengoptimalkan persediaan."
+              },
+              {
+                icon: MdPeople,
+                title: "Customer Tracking",
+                desc: "Catat data profil pembeli, riwayat pesanan, status loyalty, dan total pembelanjaan secara otomatis."
+              },
+              {
+                icon: MdReceiptLong,
+                title: "Order Monitoring",
+                desc: "Pantau status pengiriman, checkout orders, dan histori order history secara transparan dan realtime."
+              },
+              {
+                icon: MdBarChart,
+                title: "Dashboard Analytics",
+                desc: "Visualisasi analitik penjualan, revenue bulanan, dan total pertumbuhan member baru dalam satu dashboard."
+              }
+            ].map((f, i) => {
+              const Icon = f.icon;
+              return (
+                <div
+                  key={i}
+                  className="bg-slate-50 border border-slate-200/60 p-8 rounded-3xl hover:bg-white hover:border-slate-350 hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+                >
+                  <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center text-xl mb-6">
+                    <Icon />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-extrabold text-slate-900 mb-2">{f.title}</h4>
+                    <p className="text-xs text-slate-500 leading-relaxed font-light">{f.desc}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ── CRM FLOW VISUALIZATION ── */}
+      <section className="py-24 bg-slate-900 text-white relative overflow-hidden border-b border-slate-950">
+        <div className="absolute inset-0 bg-grid opacity-5 pointer-events-none" />
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
+          <div className="text-center max-w-xl mx-auto mb-20 space-y-3">
+            <p className="text-[9px] font-bold tracking-[0.25em] uppercase text-primary">
+              Automation Workflow
+            </p>
+            <h2 className="text-2xl sm:text-3xl font-black text-white">
+              Sistem Otomatisasi CRM Flow
+            </h2>
+            <p className="text-xs text-slate-400 leading-relaxed font-light">
+              Bagaimana data interaksi pelanggan mengalir dari awal pendaftaran hingga memicu reward loyalitas otomatis di database.
+            </p>
+          </div>
+
+          <div className="relative">
+            {/* Desktop Timeline Line */}
+            <div className="absolute top-[38px] left-[5%] right-[5%] h-0.5 bg-slate-800 hidden lg:block z-0" />
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 relative z-10">
+              {[
+                { step: "01", name: "Guest", desc: "Browses boutique showroom layout." },
+                { step: "02", name: "Register", desc: "Creates verified member account." },
+                { step: "03", name: "Browse Product", desc: "Checks premium products catalog." },
+                { step: "04", name: "Shopping Cart", desc: "Adds fashion items to cart." },
+                { step: "05", name: "Checkout", desc: "Initiates purchase transaction." },
+                { step: "06", name: "Order", desc: "Creates order with status Pending." },
+                { step: "07", name: "Payment", desc: "Verifies payment validation." },
+                { step: "08", name: "Completed", desc: "Triggers CRM profile stats update." },
+                { step: "09", name: "Reward Point", desc: "Awards points dynamically." },
+                { step: "10", name: "Membership Upgrade", desc: "Promotes member tier level." },
+                { step: "11", name: "Voucher", desc: "Claims tier welcome voucher." },
+                { step: "12", name: "Repeat Purchase", desc: "Re-enters cycle with VIP perks." },
+              ].map((s, idx) => (
+                <div
+                  key={idx}
+                  className="bg-slate-950/40 backdrop-blur-md border border-white/5 p-5 rounded-2xl text-left space-y-3 hover:border-primary/50 transition-all duration-300"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono text-primary font-bold">{s.step}</span>
+                    <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white">{s.name}</h4>
+                    <p className="text-[10px] text-slate-500 mt-1 leading-relaxed">{s.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── MEMBERSHIP TIMELINE & BENEFITS ── */}
+      <section id="membership" className="py-24 bg-white border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center max-w-xl mx-auto mb-16 space-y-3">
+            <p className="text-[9px] font-bold tracking-[0.25em] uppercase text-primary">
+              Loyalty Loyalty Program
+            </p>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
+              BUIQ Membership Tiers
+            </h2>
+            <p className="text-xs text-slate-400 leading-relaxed font-light">
+              Kumpulkan reward points dari setiap checkout belanja untuk meningkatkan tier member Anda dan membuka potongan harga spesial.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {membershipTiers.map((tier) => (
+              <div
+                key={tier.name}
+                className="bg-slate-50 rounded-3xl p-6 border border-slate-200 hover:shadow-xl hover:border-slate-350 transition-all duration-300 flex flex-col justify-between"
+              >
+                <div>
+                  <div className={`h-2.5 rounded-full bg-gradient-to-r ${tier.color} mb-6`} />
+                  <h3 className="text-lg font-black text-slate-900 mb-1">{tier.name}</h3>
+                  <span className="text-[10px] text-slate-400 font-bold tracking-wider uppercase block mb-6">
+                    {tier.pointsReq}
+                  </span>
+
+                  <ul className="space-y-3.5 text-xs text-slate-600 font-medium">
+                    <li className="flex items-center gap-2">
+                      <MdCheckCircle className="text-primary shrink-0" />
+                      <span>{tier.multiplier} Multiplier</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <MdCheckCircle className="text-primary shrink-0" />
+                      <span>{tier.discount} discount</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <MdCheckCircle className="text-primary shrink-0" />
+                      <span className="truncate">{tier.voucher}</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <MdCheckCircle className="text-primary shrink-0" />
+                      <span className="truncate">{tier.shipping}</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="mt-8 pt-4 border-t border-slate-200">
+                  <span className="text-[10px] text-slate-400 block font-light">
+                    Redemption Benefit
+                  </span>
+                  <p className="text-[11px] font-bold text-slate-800 mt-1">{tier.reward}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── REALTIME STATISTICS SECTION WITH SCROLL COUNT TRIGGER ── */}
+      <section className="bg-slate-100 py-16 border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 divide-y lg:divide-y-0 lg:divide-x divide-slate-250">
+            <div className="flex flex-col items-center justify-center p-4">
+              <span className="text-4xl sm:text-5xl font-black">
+                <AnimatedCounter value={liveStats.members} />+
+              </span>
+              <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase mt-2">
+                Total Members
+              </span>
+            </div>
+
+            <div className="flex flex-col items-center justify-center p-4 pt-8 lg:pt-4">
+              <span className="text-4xl sm:text-5xl font-black">
+                <AnimatedCounter value={liveStats.orders} />+
+              </span>
+              <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase mt-2">
+                Today's Orders
+              </span>
+            </div>
+
+            <div className="flex flex-col items-center justify-center p-4 pt-8 lg:pt-4">
+              <span className="text-4xl sm:text-5xl font-black">
+                <AnimatedCounter value={liveStats.products} />
+              </span>
+              <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase mt-2">
+                Premium Products
+              </span>
+            </div>
+
+            <div className="flex flex-col items-center justify-center p-4 pt-8 lg:pt-4">
+              <span className="text-4xl sm:text-5xl font-black">
+                <AnimatedCounter value={liveStats.satisfaction} suffix="%" />
+              </span>
+              <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase mt-2">
+                Customer Satisfaction
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── TESTIMONIALS SECTION ── */}
+      <section className="py-24 bg-white border-b border-slate-200">
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <p className="text-[9px] font-bold tracking-[0.25em] uppercase text-primary mb-3">
+            Customer Voice
+          </p>
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mb-12">
+            What Members Say
+          </h2>
+
+          <div className="min-h-[160px] flex items-center justify-center">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTestimonial}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                transition={{ duration: 0.4 }}
+                className="space-y-6"
+              >
+                <div className="flex justify-center text-amber-500 text-sm">
+                  <MdStar /><MdStar /><MdStar /><MdStar /><MdStar />
+                </div>
+                <blockquote className="font-serif text-lg md:text-xl text-slate-700 italic leading-relaxed">
+                  "{brandTestimonials[activeTestimonial].quote}"
+                </blockquote>
+                <div className="flex flex-col items-center gap-2">
+                  <img
+                    src={brandTestimonials[activeTestimonial].avatar}
+                    alt=""
+                    className="w-11 h-11 object-cover rounded-full border border-slate-200 shadow-sm"
+                  />
+                  <p className="text-xs font-black text-slate-900">
+                    {brandTestimonials[activeTestimonial].author}
+                  </p>
+                  <p className="text-[9px] text-slate-400 tracking-wider uppercase font-bold">
+                    {brandTestimonials[activeTestimonial].role}
+                  </p>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          <div className="flex justify-center gap-2.5 mt-8">
+            {brandTestimonials.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setActiveTestimonial(idx)}
+                className={`h-1.5 rounded-full transition-all duration-350 cursor-pointer ${
+                  activeTestimonial === idx ? "bg-primary w-6" : "bg-slate-200 w-3"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── ABOUT SECTION ── */}
+      <section id="about" className="py-24 bg-slate-50 border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            <div className="lg:col-span-5 space-y-6 text-left">
+              <p className="text-[9px] font-bold tracking-[0.25em] uppercase text-primary">
+                Brand Origin
+              </p>
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">
+                About BUIQ Boutique
+              </h2>
+              <p className="text-xs text-slate-500 leading-relaxed font-light">
+                BUIQ didirikan di Jakarta dengan mengutamakan kualitas jahitan struktur bahan baku terbaik, dan minimalis tanpa logo mencolok. Kami menyederhanakan cara berpakaian agar Anda tetap tampil elegan di berbagai kesempatan, baik santai maupun formal.
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-900">
+                    Visi
+                  </h4>
+                  <p className="text-[11px] text-slate-405 mt-1 leading-relaxed">
+                    Menjadi pionir brand fashion premium yang memadukan keindahan butik dengan otomatisasi CRM terbaik di Asia Tenggara.
+                  </p>
+                </div>
+                <div>
+                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-900">
+                    Misi
+                  </h4>
+                  <p className="text-[11px] text-slate-405 mt-1 leading-relaxed">
+                    Menghasilkan pakaian elegan berkualitas tinggi dengan kemudahan transaksi berkat sistem points & loyalty modern.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="lg:col-span-7 grid grid-cols-2 gap-4">
+              <img
+                src="https://images.unsplash.com/photo-1483985988355-763728e1935b?w=600&auto=format&fit=crop"
+                alt=""
+                className="w-full aspect-[4/3] object-cover rounded-3xl bg-white border border-slate-200 shadow-sm"
+              />
+              <img
+                src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600&auto=format&fit=crop"
+                alt=""
+                className="w-full aspect-[4/3] object-cover rounded-3xl bg-white border border-slate-200 shadow-sm"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── CONTACT SECTION ── */}
+      <section id="contact" className="py-24 bg-white border-b border-slate-250">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+            <div className="lg:col-span-5 space-y-8 text-left">
+              <div>
+                <p className="text-[9px] font-bold tracking-[0.25em] uppercase text-primary mb-2">
+                  Customer Care
+                </p>
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
+                  Get in Touch
+                </h2>
+              </div>
+
+              <div className="space-y-5 text-xs text-slate-500 font-light leading-relaxed">
+                <div>
+                  <h4 className="text-[10px] font-bold uppercase text-slate-800">Jakarta Showroom</h4>
+                  <p>BUIQ Showroom Building, Jl. Sudirman Kav 21, Jakarta Selatan 12920</p>
+                </div>
+                <div>
+                  <h4 className="text-[10px] font-bold uppercase text-slate-800">Digital Support</h4>
+                  <p>Email: support@buiqstore.com</p>
+                  <p>WA Chat: +62 812-9876-5432</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                {[FaInstagram, FaTiktok, FaFacebook].map((Icon, idx) => (
+                  <a
+                    key={idx}
+                    href="#"
+                    className="w-9 h-9 rounded-full bg-slate-100 hover:bg-primary hover:text-white transition-all duration-300 flex items-center justify-center text-slate-700 border border-slate-200/50"
+                  >
+                    <Icon className="text-sm" />
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            <div className="lg:col-span-7 bg-slate-50 rounded-3xl p-8 border border-slate-200">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-4 mb-6">
+                Send us a Message
+              </h4>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  showToast("Message sent successfully! Our sales team will get back to you.");
+                  e.target.reset();
+                }}
+                className="space-y-4"
+              >
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[9px] font-bold uppercase text-slate-500 block mb-1">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Your Name"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs outline-none focus:border-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-bold uppercase text-slate-500 block mb-1">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="Your Email"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs outline-none focus:border-primary"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[9px] font-bold uppercase text-slate-500 block mb-1">
+                    Your Message
+                  </label>
+                  <textarea
+                    required
+                    rows={4}
+                    placeholder="Write your message here..."
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs outline-none focus:border-primary resize-none"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-slate-950 hover:bg-primary text-white text-xs font-bold py-3.5 rounded-xl transition-all shadow-md"
+                >
+                  Send Message
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FOOTER ── */}
+      <footer className="bg-slate-950 text-slate-450 pt-20 pb-10">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 pb-14 border-b border-slate-800">
+            <div className="space-y-5 text-left">
+              <span className="font-serif text-2xl font-black tracking-widest text-white uppercase">
+                BUIQ
+              </span>
+              <p className="text-xs text-slate-400 leading-relaxed font-light">
+                Sleek boutique fashion catalog integrated with automated CRM & loyalty tier automation program.
+              </p>
+            </div>
+
+            <div className="space-y-4 text-left">
+              <h4 className="text-[10px] font-bold uppercase text-white tracking-widest">Products</h4>
+              <ul className="space-y-2.5 text-xs text-slate-400">
+                <li>
+                  <button onClick={() => { setSelectedCategory("Dress"); scrollToSection("products"); }} className="hover:text-primary transition-colors cursor-pointer">
+                    Dress Collections
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => { setSelectedCategory("Bag"); scrollToSection("products"); }} className="hover:text-primary transition-colors cursor-pointer">
+                    Boutique Bags
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => { setSelectedCategory("Shoes"); scrollToSection("products"); }} className="hover:text-primary transition-colors cursor-pointer">
+                    Designer Shoes
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => { setSelectedCategory("Accessories"); scrollToSection("products"); }} className="hover:text-primary transition-colors cursor-pointer">
+                    Jewelry & Accessories
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            <div className="space-y-4 text-left">
+              <h4 className="text-[10px] font-bold uppercase text-white tracking-widest">Membership</h4>
+              <ul className="space-y-2.5 text-xs text-slate-400">
+                <li>
+                  <button onClick={() => scrollToSection("membership")} className="hover:text-primary transition-colors cursor-pointer">
+                    Bronze Benefits
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => scrollToSection("membership")} className="hover:text-primary transition-colors cursor-pointer">
+                    Silver Benefits
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => scrollToSection("membership")} className="hover:text-primary transition-colors cursor-pointer">
+                    Gold VIP Perks
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => scrollToSection("membership")} className="hover:text-primary transition-colors cursor-pointer">
+                    Platinum Instant Claims
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            <div className="space-y-4 text-left">
+              <h4 className="text-[10px] font-bold uppercase text-white tracking-widest">CRM Flow</h4>
+              <ul className="space-y-2.5 text-xs text-slate-400">
+                <li>
+                  <Link to="/register" className="hover:text-primary transition-colors">
+                    Create Member Account
+                  </Link>
+                </li>
+                <li>
+                  <button onClick={() => scrollToSection("products")} className="hover:text-primary transition-colors cursor-pointer">
+                    Add Items to Cart
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => scrollToSection("products")} className="hover:text-primary transition-colors cursor-pointer">
+                    Pending Orders Check
+                  </button>
+                </li>
+                <li>
+                  <Link to={user ? "/member-dashboard" : "/login"} className="hover:text-primary transition-colors">
+                    Check Loyalty Points
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="pt-8 flex flex-col md:flex-row items-center justify-between text-[10px] text-slate-500 uppercase tracking-widest">
+            <p>© 2026 BUIQ BOUTIQUE INC. ALL RIGHTS RESERVED.</p>
+            <div className="flex gap-6 mt-4 md:mt-0">
+              <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
+              <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      {/* ── SHOPPING CART DRAWER (GLASSMORPHISM PANEL) ── */}
+      <AnimatePresence>
+        {cartOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setCartOpen(false)}
+              className="fixed inset-0 z-50 bg-black"
+            />
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "tween", duration: 0.3 }}
+              className="fixed inset-y-0 right-0 z-50 w-96 bg-white p-6 shadow-2xl flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
+                  <div className="flex items-center gap-2">
+                    <MdShoppingCart className="text-xl text-primary" />
+                    <span className="font-extrabold text-sm text-slate-900 tracking-wider">
+                      SHOPPING BAG ({cart.reduce((sum, item) => sum + item.quantity, 0)})
+                    </span>
+                  </div>
+                  <button onClick={() => setCartOpen(false)}>
+                    <MdClose className="text-xl text-slate-400 hover:text-slate-700" />
+                  </button>
+                </div>
+
+                {cart.length === 0 ? (
+                  <div className="text-center py-20 space-y-4">
+                    <p className="text-xs text-slate-400 font-semibold">Your shopping bag is empty.</p>
+                    <button
+                      onClick={() => {
+                        setCartOpen(false);
+                        scrollToSection("products");
+                      }}
+                      className="bg-primary text-white text-[10px] font-bold px-6 py-2.5 rounded-xl uppercase tracking-wider"
+                    >
+                      Browse Products
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4 overflow-y-auto max-h-[50vh] pr-2">
+                    {cart.map((item) => (
+                      <div
+                        key={item.product.id}
+                        className="flex gap-4 p-3 border border-slate-100 rounded-xl bg-slate-50"
+                      >
+                        <img
+                          src={item.product.image_url || fallbackImg}
+                          alt=""
+                          className="w-16 h-20 object-cover rounded-lg bg-white border"
+                        />
+                        <div className="flex-1 flex flex-col justify-between">
+                          <div>
+                            <h4 className="text-xs font-bold text-slate-800 line-clamp-1">
+                              {item.product.product_name}
+                            </h4>
+                            <p className="text-[10px] text-slate-500 mt-1">
+                              Rp {parseFloat(item.product.price).toLocaleString()}
+                            </p>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center border border-slate-200 rounded-lg bg-white">
+                              <button
+                                onClick={() => handleUpdateQty(item.product.id, -1)}
+                                className="px-2.5 py-1 text-xs font-bold hover:bg-slate-100 text-slate-650"
+                              >
+                                -
+                              </button>
+                              <span className="px-3 text-xs font-mono font-bold text-slate-800">
+                                {item.quantity}
+                              </span>
+                              <button
+                                onClick={() => handleUpdateQty(item.product.id, 1)}
+                                className="px-2.5 py-1 text-xs font-bold hover:bg-slate-100 text-slate-650"
+                              >
+                                +
+                              </button>
+                            </div>
+                            <span className="text-[10px] bg-amber-50 text-amber-600 font-bold px-2 py-0.5 rounded-md border border-amber-100 shrink-0">
+                              ★ {item.product.reward_points * item.quantity} Pts
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {cart.length > 0 && (
+                <div className="border-t border-slate-100 pt-6 space-y-4 bg-white">
+                  <div className="flex justify-between items-center text-slate-900">
+                    <span className="text-xs font-extrabold">SUBTOTAL</span>
+                    <span className="text-sm font-black font-mono">
+                      Rp{" "}
+                      {cart
+                        .reduce((sum, item) => sum + item.product.price * item.quantity, 0)
+                        .toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-slate-450 border-b pb-4">
+                    <span className="text-[10px] font-bold">TOTAL REWARD POINTS</span>
+                    <span className="text-xs font-bold text-amber-500">
+                      {cart.reduce((sum, item) => sum + item.product.reward_points * item.quantity, 0)} Pts
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={handleCartCheckout}
+                    disabled={submittingCheckout}
+                    className="w-full bg-primary hover:bg-primary-hover text-white text-xs font-bold py-3.5 rounded-xl uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
+                  >
+                    {submittingCheckout ? "Processing..." : "Checkout All Items"}
+                  </button>
+                </div>
               )}
             </motion.div>
           </>
         )}
       </AnimatePresence>
 
-      {/* ── HERO ────────────────────────────────────────────────────────────── */}
-      <section id="hero" className="relative h-screen min-h-[680px] flex items-center overflow-hidden bg-[#0D0D0D]">
+      {/* ── CHECKOUT CONFIRMATION MODAL ── */}
+      <AnimatePresence>
+        {checkoutProduct && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.4 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setCheckoutProduct(null)}
+              className="fixed inset-0 z-50 bg-black"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed inset-x-6 bottom-6 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 z-50 md:w-[480px] bg-white rounded-3xl p-6 shadow-2xl border border-slate-200/80"
+            >
+              <div className="flex items-center justify-between pb-3 border-b mb-4">
+                <h3 className="font-extrabold text-sm text-slate-900">Konfirmasi Pembelian</h3>
+                <button onClick={() => setCheckoutProduct(null)}>
+                  <MdClose className="text-lg text-slate-400 hover:text-slate-700" />
+                </button>
+              </div>
 
-        {/* Video background */}
-        {!videoError ? (
-          <video
-            ref={videoRef}
-            className="absolute inset-0 w-full h-full object-cover opacity-50"
-            src={heroVideoUrl}
-            autoPlay muted loop playsInline
-            onError={() => setVideoError(true)}
-          />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-[#0F172A] via-[#1a2744] to-[#0F172A]" />
+              <div className="flex gap-4 p-3 bg-slate-50 border rounded-2xl mb-4">
+                <img
+                  src={checkoutProduct.image_url || fallbackImg}
+                  alt=""
+                  className="w-16 h-20 object-cover rounded-xl border bg-white shrink-0"
+                />
+                <div className="flex-1 flex flex-col justify-between">
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-800 line-clamp-1">
+                      {checkoutProduct.product_name}
+                    </h4>
+                    <p className="text-[10px] text-slate-400 mt-1">Code: {checkoutProduct.product_code}</p>
+                  </div>
+                  <p className="text-xs font-black text-slate-900">
+                    Rp {parseFloat(checkoutProduct.price).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  <span className="text-[10px] font-bold text-slate-500">Jumlah Pesanan</span>
+                  <div className="flex items-center border rounded-lg bg-white">
+                    <button
+                      onClick={() => setCheckoutQty((q) => Math.max(1, q - 1))}
+                      className="px-2.5 py-1 text-xs font-bold"
+                    >
+                      -
+                    </button>
+                    <span className="px-3 text-xs font-mono font-bold text-slate-800">{checkoutQty}</span>
+                    <button
+                      onClick={() => setCheckoutQty((q) => Math.min(checkoutProduct.stock, q + 1))}
+                      className="px-2.5 py-1 text-xs font-bold"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2 border-t pt-4">
+                  <div className="flex justify-between text-xs font-semibold text-slate-600">
+                    <span>Total Pembayaran</span>
+                    <span className="font-mono text-slate-900 font-bold">
+                      Rp {(checkoutProduct.price * checkoutQty).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-xs font-semibold text-slate-650">
+                    <span>Loyalty Point yang Diperoleh</span>
+                    <span className="text-amber-500 font-bold">
+                      +{checkoutProduct.reward_points * checkoutQty} Pts
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => setCheckoutProduct(null)}
+                    className="flex-1 border text-slate-500 hover:bg-slate-50 text-xs font-bold py-3 rounded-xl transition-all"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleConfirmCheckout}
+                    disabled={submittingCheckout}
+                    className="flex-1 bg-primary hover:bg-primary-hover text-white text-xs font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md shadow-primary/20"
+                  >
+                    {submittingCheckout ? "Memproses..." : "Konfirmasi & Beli"}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
         )}
+      </AnimatePresence>
 
-        {/* Layered overlay: bottom-weighted for text legibility */}
-        <div className="absolute inset-0 z-0" style={{ background: "linear-gradient(180deg, rgba(15,23,42,0.65), rgba(15,23,42,0.45))" }} />
+      {/* ── PRODUCT DETAIL MODAL ── */}
+      <AnimatePresence>
+        {detailProduct && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.4 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setDetailProduct(null)}
+              className="fixed inset-0 z-50 bg-black"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed inset-x-6 bottom-6 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 z-50 md:w-[600px] bg-white rounded-3xl p-6 shadow-2xl border border-slate-200/80 grid grid-cols-1 md:grid-cols-12 gap-6"
+            >
+              <button
+                onClick={() => setDetailProduct(null)}
+                className="absolute top-4 right-4 z-10 p-1.5 rounded-full bg-white/80 backdrop-blur-md shadow-md border"
+              >
+                <MdClose className="text-lg text-slate-655" />
+              </button>
 
-        {/* Content */}
-        <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 w-full pt-16">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center w-full">
+              <div className="md:col-span-6 relative aspect-[3/4] bg-slate-100 rounded-2xl overflow-hidden border">
+                <img
+                  src={detailProduct.image_url || fallbackImg}
+                  alt={detailProduct.product_name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
 
-            {/* Left side info */}
-            <div className="lg:col-span-7 text-left space-y-6">
-              <AnimatePresence mode="wait">
-                <motion.div key={currentSlide} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} className="space-y-6">
+              <div className="md:col-span-6 flex flex-col justify-between text-left space-y-4">
+                <div>
+                  <span className="bg-slate-900 text-white text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md">
+                    {detailProduct.category}
+                  </span>
+                  <h3 className="text-base font-extrabold text-slate-900 mt-2">
+                    {detailProduct.product_name}
+                  </h3>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Code: {detailProduct.product_code}</p>
+                </div>
 
-                  {/* Eyebrow */}
-                  <div className="flex items-center gap-3">
-                    <span className="w-6 h-px bg-[#2B7FFF]" />
-                    <span className="text-[10px] font-semibold tracking-[0.28em] uppercase text-[#2B7FFF]">
-                      {heroSlides[currentSlide].tag}
+                <div className="space-y-3.5">
+                  <div className="flex justify-between items-center">
+                    <span className="text-base font-black text-slate-900">
+                      Rp {parseFloat(detailProduct.price).toLocaleString()}
+                    </span>
+                    <span className="bg-amber-50 text-amber-700 font-bold px-2 py-0.5 rounded-lg border border-amber-100 text-[10px]">
+                      ★ {detailProduct.reward_points} Pts
                     </span>
                   </div>
 
-                  {/* Headline */}
-                  <h1 className="font-['Playfair_Display',serif] text-5xl sm:text-6xl lg:text-7xl font-normal text-white leading-[1.06] tracking-tight">
-                    {heroSlides[currentSlide].headline}<br />
-                    <span className="italic text-white/80">{heroSlides[currentSlide].italic}</span>
-                  </h1>
-
-                  {/* Body */}
-                  <p className="text-sm sm:text-base text-white/75 leading-relaxed max-w-xl font-light tracking-wide">
-                    {heroSlides[currentSlide].desc}
+                  <p className="text-[11px] text-slate-500 leading-relaxed font-light">
+                    Koleksi premium butik BUIQ terbuat dari katun tenun terpilih untuk kenyamanan dan keawetan bentuk siluet yang sempurna.
                   </p>
 
-                  {/* CTAs */}
-                  <div className="flex flex-wrap gap-4 pt-2">
-                    <button onClick={() => scrollToSection("catalog")}
-                      className="bg-white hover:bg-[#2B7FFF] text-[#0F172A] hover:text-white text-[11px] font-semibold tracking-[0.12em] uppercase px-8 py-4 rounded-full transition-all duration-300 shadow-lg">
-                      Shop Collection
-                    </button>
-                    <Link to={isLoggedIn ? "/dashboard" : "/login"}
-                      className="border border-white/30 hover:border-white/70 text-white text-[11px] font-semibold tracking-[0.12em] uppercase px-8 py-4 rounded-full transition-all duration-300 backdrop-blur-sm">
-                      {isLoggedIn ? "Dashboard" : "Login"}
-                    </Link>
-                  </div>
-                </motion.div>
-              </AnimatePresence>
-
-              {/* Slide dots */}
-              <div className="flex gap-2.5 pt-4">
-                {heroSlides.map((_, i) => (
-                  <button key={i} onClick={() => setCurrentSlide(i)}
-                    className={`h-0.5 rounded-full transition-all duration-500 ${currentSlide === i ? "bg-white w-8" : "bg-white/30 w-3"}`} />
-                ))}
-              </div>
-            </div>
-
-            {/* Right side Dashboard Mockup */}
-            <div className="lg:col-span-5 hidden lg:block">
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
-                className="relative"
-              >
-                {/* Floating active users bubble */}
-                <motion.div
-                  animate={{ y: [0, -6, 0] }}
-                  transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-                  className="absolute -top-6 -left-6 z-20 bg-[#2B7FFF] text-white text-[10px] font-mono font-bold tracking-wider px-3.5 py-2 rounded-xl shadow-lg shadow-[#2B7FFF]/25 flex items-center gap-2"
-                >
-                  <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping" />
-                  Live Members: 1,842
-                </motion.div>
-
-                {/* Floating sale alert bubble */}
-                <motion.div
-                  animate={{ y: [0, 6, 0] }}
-                  transition={{ repeat: Infinity, duration: 4.5, ease: "easeInOut" }}
-                  className="absolute -bottom-6 -right-4 z-20 bg-emerald-500 text-white text-[10px] font-mono font-bold tracking-wider px-3.5 py-2 rounded-xl shadow-lg shadow-emerald-500/25 flex items-center gap-2"
-                >
-                  New Order +Rp 349,000
-                </motion.div>
-
-                {/* Main Dashboard Card */}
-                <div className="bg-slate-950/75 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
-
-                  {/* Glowing background hint */}
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-[#2B7FFF]/10 rounded-full blur-2xl pointer-events-none" />
-
-                  {/* Top Header */}
-                  <div className="flex items-center justify-between pb-4 border-b border-white/5 mb-6">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-slate-700" />
-                      <span className="w-2.5 h-2.5 rounded-full bg-slate-700" />
-                      <span className="w-2.5 h-2.5 rounded-full bg-slate-700" />
-                    </div>
-                    <span className="text-[9px] font-mono text-slate-400 uppercase tracking-widest">BUIQ CRM v1.4</span>
-                  </div>
-
-                  {/* Content Grid */}
-                  <div className="space-y-6">
-
-                    {/* Revenue stat block */}
-                    <div className="text-left space-y-1.5">
-                      <p className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">MONTHLY PLATFORM REVENUE</p>
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-2xl font-bold font-mono text-white">Rp 142.85M</span>
-                        <span className="text-[10px] text-emerald-400 font-bold font-mono bg-emerald-500/10 px-2 py-0.5 rounded-md">+14.2%</span>
-                      </div>
-                    </div>
-
-
-                    {/* Recent internal activities */}
-                    <div className="space-y-3 pt-2">
-                      <p className="text-[9px] text-slate-400 font-mono uppercase tracking-widest text-left">RECENT CRM EVENTS</p>
-                      <div className="space-y-2.5">
-                        {[
-                          { name: "Daniel Wijaya (Kebayoran)", type: "Purchased Oxford Shirt", time: "2m ago" },
-                          { name: "Amanda Safitri (Bandung)", type: "Upgraded to VIP Tier", time: "12m ago" }
-                        ].map((evt, idx) => (
-                          <div key={idx} className="flex items-center justify-between text-[11px] p-2.5 rounded-xl bg-white/5 border border-white/5">
-                            <div className="flex items-center gap-2.5 text-left">
-                              <div className={`w-2 h-2 rounded-full ${idx === 0 ? "bg-[#2B7FFF]" : "bg-emerald-400"}`} />
-                              <div>
-                                <p className="font-semibold text-white">{evt.name}</p>
-                                <p className="text-[10px] text-slate-400 mt-0.5">{evt.type}</p>
-                              </div>
-                            </div>
-                            <span className="text-[9px] font-mono text-slate-500">{evt.time}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
+                  <div className="flex justify-between text-xs font-semibold text-slate-500">
+                    <span>Ketersediaan Stok</span>
+                    <span className="font-mono text-slate-900 font-bold">
+                      {detailProduct.stock} unit tersedia
+                    </span>
                   </div>
                 </div>
-              </motion.div>
-            </div>
 
-          </div>
-        </div>
-
-        {/* Slide controls */}
-        <div className="absolute right-8 bottom-8 z-10 flex items-center gap-2">
-          <button onClick={() => setCurrentSlide(p => (p - 1 + heroSlides.length) % heroSlides.length)}
-            className="w-9 h-9 rounded-full border border-white/20 text-white flex items-center justify-center hover:bg-white/10 transition-all backdrop-blur-sm">
-            <MdArrowBackIos size={10} className="translate-x-[2px]" />
-          </button>
-          <button onClick={() => setCurrentSlide(p => (p + 1) % heroSlides.length)}
-            className="w-9 h-9 rounded-full border border-white/20 text-white flex items-center justify-center hover:bg-white/10 transition-all backdrop-blur-sm">
-            <MdArrowForwardIos size={10} />
-          </button>
-        </div>
-
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/30 z-10">
-          <span className="text-[8px] tracking-[0.3em] uppercase font-medium">Scroll</span>
-          <motion.div animate={{ y: [0, 6, 0] }} transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-            className="w-px h-8 bg-gradient-to-b from-white/40 to-transparent" />
-        </div>
-      </section>
-
-      {/* ── Marquee strip ───────────────────────────────────────────────────── */}
-      <div className="bg-[#0F172A] py-4 overflow-hidden border-y border-slate-800">
-        <motion.div animate={{ x: ["0%", "-50%"] }} transition={{ duration: 30, repeat: Infinity, ease: "linear" }} className="flex gap-12 whitespace-nowrap">
-          {[...Array(4)].map((_, i) =>
-            ["BUIQ CRM Platform", "Omnichannel Retail Operations", "VIP Customer Profiling", "Real-Time Inventory Turn Tracking", "Expedited Order Management", "Direct Clienteling System"].map(t => (
-              <span key={`${i}-${t}`} className="text-[9px] font-semibold tracking-[0.28em] uppercase text-slate-500">
-                {t} <span className="text-[#2B7FFF] mx-4">·</span>
-              </span>
-            ))
-          )}
-        </motion.div>
-      </div>
-
-      {/* ── Trust Statistics Section ────────────────────────────────────────── */}
-      <section className="bg-[#0b0f19] py-10 border-b border-slate-800/40">
-        <div className="max-w-7xl mx-auto px-6 md:px-12">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4 divide-y md:divide-y-0 md:divide-x divide-slate-800/60">
-            {[
-              { val: "1,200+", lbl: "Active Boutiques" },
-              { val: "150,000+", lbl: "VIP Customers" },
-              { val: "99.99%", lbl: "Platform Uptime" },
-              { val: "24/7", lbl: "Support Availability" }
-            ].map((stat, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: idx * 0.1 }}
-                className="flex flex-col items-center justify-center text-center px-4 pt-6 md:pt-0"
-              >
-                <span className="text-3xl md:text-4xl font-extrabold font-mono text-white tracking-tight">{stat.val}</span>
-                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mt-1">{stat.lbl}</span>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Trusted By Section ──────────────────────────────────────────────── */}
-      <section className="bg-[#0b0f19] py-8 border-b border-slate-800/40 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 flex flex-col sm:flex-row items-center gap-6 sm:gap-12 justify-between">
-          <span className="text-[8px] font-bold tracking-[0.25em] uppercase text-slate-600 shrink-0">TRUSTED BY LEADING BRANDS</span>
-          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 opacity-45 grayscale contrast-200">
-            {["ZARA", "COS", "ZALORA", "MANGO", "UNIQLO"].map((logo) => (
-              <span key={logo} className="font-['Playfair_Display',serif] text-base md:text-lg font-bold tracking-[0.25em] text-white">
-                {logo}
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-
-
-      {/* ── How BUIQ Works Section ──────────────────────────────────────────── */}
-      <section className="py-36 bg-white border-y border-slate-100">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 text-center">
-          
-          <div className="max-w-3xl mx-auto space-y-4 mb-24">
-            <p className="text-[9px] font-semibold tracking-[0.3em] uppercase text-[#2B7FFF]">Workflow</p>
-            <h2 className="font-['Playfair_Display',serif] text-4xl md:text-5xl font-semibold text-[#0F172A] tracking-tight leading-tight">
-              Simple. Intelligent. Effective.
-            </h2>
-            <p className="text-sm text-slate-500 max-w-xl mx-auto leading-relaxed font-light">
-              Four streamlined steps to scale your store operations from chaotic spreadsheets to structured growth.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 relative text-left">
-            {/* Desktop timeline horizontal line */}
-            <div className="absolute top-[28px] left-[12%] right-[12%] h-[1px] bg-slate-100 hidden md:block z-0" />
-
-            {[
-              { num: "01", step: "Import Customers", desc: "Bulk-upload offline customer spreadsheets or sync your existing Shopify clients in minutes." },
-              { num: "02", step: "Manage Inventory", desc: "Set product styles, categories, sizing variants, pricing structures, and low-stock thresholds." },
-              { num: "03", step: "Track Sales", desc: "Log walk-in cash, credit card, and digital checkout events directly into our high-speed logger." },
-              { num: "04", step: "Grow Loyalty", desc: "Establish automated customer reward tiers and VIP membership status based on lifetime value (LTV)." }
-            ].map((item, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: idx * 0.1 }}
-                className="relative z-10 space-y-5 px-4 text-center md:text-left"
-              >
-                <div className="flex items-center justify-center md:justify-start">
-                  <span className="w-14 h-14 rounded-2xl bg-[#F8FAFC] border border-slate-100 flex items-center justify-center text-[#2B7FFF] font-mono text-lg font-bold shadow-sm">
-                    {item.num}
-                  </span>
-                </div>
-                <div className="space-y-2">
-                  <h4 className="text-base font-bold text-[#0F172A] tracking-tight">{item.step}</h4>
-                  <p className="text-xs text-slate-500 leading-relaxed font-light">{item.desc}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-        </div>
-      </section>
-
-      {/* ── Why BUIQ Section (SaaS Value Proposition) ───────────────────────── */}
-      <section className="py-36 bg-[#F8FAFC] border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-6 md:px-12">
-          
-          <div className="max-w-3xl space-y-4 mb-24 text-center md:text-left">
-            <p className="text-[9px] font-semibold tracking-[0.3em] uppercase text-[#2B7FFF]">Why Choose BUIQ CRM</p>
-            <h2 className="font-['Playfair_Display',serif] text-4xl md:text-5xl font-semibold text-[#0F172A] tracking-tight leading-tight">
-              Designed for Modern Brand Commerce
-            </h2>
-            <p className="text-sm text-slate-500 max-w-xl leading-relaxed font-light">
-              BUIQ helps premium brands bridge checkout events, inventory turns, and VIP relations to run stores with data-driven confidence.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { icon: MdStyle, title: "Omnichannel Orders", desc: "Unify transactions from your retail boutiques and web stores into one real-time checkout stream." },
-              { icon: MdLayers, title: "Loyalty & Clienteling", desc: "Understand shopper preferences, sizes, and VIP status to customize service directly on the store floor." },
-              { icon: MdLocalOffer, title: "Smart Stock Planning", desc: "Avoid stockouts and overstock. Get smart alerts based on real-time sell-through velocity." },
-              { icon: MdHeadsetMic, title: "Actionable Insights", desc: "Gain visibility on top categories, customer average order values (AOV), and overall retail growth." }
-            ].map((card, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: idx * 0.08 }}
-                className="bg-white border border-slate-100 p-8 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col justify-between"
-              >
-                <div className="w-12 h-12 rounded-xl bg-[#2B7FFF]/5 border border-[#2B7FFF]/10 flex items-center justify-center text-[#2B7FFF] mb-6">
-                  <card.icon size={22} />
-                </div>
-                <div className="space-y-2 mt-auto">
-                  <h4 className="text-base font-bold text-[#0F172A] tracking-tight">{card.title}</h4>
-                  <p className="text-xs text-slate-500 leading-relaxed font-light">{card.desc}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-        </div>
-      </section>
-
-      {/* ── Categories ──────────────────────────────────────────────────────── */}
-      <section id="categories" className="py-36 bg-white">
-        <div className="max-w-7xl mx-auto px-6 md:px-12">
-
-          <div className="mb-16 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
-            <div className="space-y-2">
-              <p className="text-[9px] font-semibold tracking-[0.3em] uppercase text-[#2B7FFF]">Interactive Sandbox</p>
-              <h2 className="font-['Playfair_Display',serif] text-3xl md:text-4xl font-semibold text-[#0F172A] tracking-tight">Live Storefront Demo</h2>
-              <p className="text-xs text-slate-400 font-light mt-1 max-w-xl">
-                See how a BUIQ-powered online store syncs product categories, inventory changes, and customer transactions directly with the CRM console.
-              </p>
-            </div>
-            <button onClick={() => scrollToSection("catalog")} className="text-[10px] font-semibold tracking-widest uppercase text-slate-400 hover:text-[#2B7FFF] transition-colors flex items-center gap-2 group">
-              View All <MdArrowForwardIos size={10} className="group-hover:translate-x-1 transition-transform" />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-            {categories.map((cat, i) => (
-              <motion.div key={cat.id} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1], delay: i * 0.06 }}
-                onClick={() => { setActiveTab(cat.id); scrollToSection("catalog"); }}
-                className="group relative aspect-[3/4] overflow-hidden rounded-2xl cursor-pointer bg-slate-100">
-
-                <img src={cat.img} alt={cat.name} className={`w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 ${cat.position}`} />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent transition-opacity duration-300" />
-
-                <div className="absolute inset-0 p-5 flex flex-col justify-end text-white">
-                  <p className="text-[9px] font-mono tracking-widest text-white/50 mb-1.5">0{i + 1}</p>
-                  <h3 className="text-xs font-semibold leading-tight">{cat.name}</h3>
-                  <p className="text-[9px] text-white/60 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 leading-relaxed">
-                    {cat.desc}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Catalog ─────────────────────────────────────────────────────────── */}
-      <section id="catalog" className="py-36 bg-[#F8FAFC] border-y border-slate-100">
-        <div className="max-w-7xl mx-auto px-6 md:px-12">
-
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-14 gap-8">
-            <div className="space-y-2">
-              <p className="text-[9px] font-semibold tracking-[0.3em] uppercase text-[#2B7FFF]">BUIQ Engine Demo</p>
-              <h2 className="font-['Playfair_Display',serif] text-3xl md:text-4xl font-semibold text-[#0F172A] tracking-tight">Live Product Sandbox</h2>
-              <p className="text-xs text-slate-400 font-light mt-1 max-w-xl">
-                Add mock collection items to the shopping bag below to simulate customer purchase actions and view real-time data sync alerts.
-              </p>
-            </div>
-
-            {/* Filter tabs */}
-            <div className="flex flex-wrap gap-0.5">
-              {[{ id: "all", name: "All Items" }, ...categories].map(tab => (
-                <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                  className={`px-4 py-2 text-[10px] font-semibold tracking-wider uppercase rounded-full transition-all ${
-                    activeTab === tab.id ? "bg-[#0F172A] text-white" : "text-slate-400 hover:text-[#0F172A]"
-                  }`}>
-                  {tab.name?.replace(" Collection", "").replace(" & Accessories", "").replace(" Essentials", "") ?? "All Items"}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5 md:gap-6">
-            <AnimatePresence mode="popLayout">
-              {filteredProducts.map(p => (
-                <motion.div key={p.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.35 }}
-                  className="group bg-white rounded-2xl overflow-hidden border border-slate-100 hover:border-slate-200 hover:shadow-xl hover:shadow-black/[0.06] transition-all duration-400">
-
-                  <div className="relative aspect-[3/4] bg-slate-50 overflow-hidden">
-                    <img src={p.img} alt={p.name} className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 ${p.position}`} />
-                    {p.stock === "Low Stock" && (
-                      <div className="absolute top-3 left-3">
-                        <span className="text-[8px] font-bold uppercase tracking-wider px-2.5 py-1 bg-white text-rose-500 border border-rose-100 rounded-full">Low Stock</span>
-                      </div>
-                    )}
-                    <div className="absolute bottom-3 inset-x-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
-                      <button onClick={() => handleAddToBag(p.name)}
-                        className="w-full bg-[#0F172A] hover:bg-[#2B7FFF] text-white text-[9px] font-bold uppercase tracking-[0.15em] py-3 rounded-xl transition-colors">
-                        Add to Bag
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="p-4">
-                    <h3 className="text-xs font-semibold text-[#0F172A] leading-snug line-clamp-1 group-hover:text-[#2B7FFF] transition-colors">{p.name}</h3>
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-xs font-bold text-[#0F172A]">{formatIDR(p.price)}</span>
-                      <div className="flex items-center gap-0.5 text-[9px] text-slate-400">
-                        <MdStar className="text-amber-400" size={11} />
-                        <span className="font-mono font-semibold">{p.rating}.0</span>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Why BUIQ ────────────────────────────────────────────────────────── */}
-      <section id="why-us" className="py-36 bg-white">
-        <div className="max-w-7xl mx-auto px-6 md:px-12">
-
-          <div className="mb-16 max-w-xl">
-            <p className="text-[9px] font-semibold tracking-[0.3em] uppercase text-[#2B7FFF] mb-3">Core Pillars</p>
-            <h2 className="font-['Playfair_Display',serif] text-3xl md:text-4xl font-semibold text-[#0F172A] tracking-tight">Why Choose BUIQ</h2>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
-            {[
-              { title: "Unified Platform",  desc: "Consolidate customer data, product catalogues, and checkout logs under one roof.", icon: <MdLayers size={18} />        },
-              { title: "Flexible Tiers",    desc: "Transparent pricing models tailored for boutique growth and enterprise scale.",        icon: <MdLocalOffer size={18} />    },
-              { title: "Dedicated Success", desc: "Direct channel support with CRM specialists to assist in system migration.",           icon: <MdHeadsetMic size={18} />    },
-              { title: "Expedited Syncing", desc: "High-speed webhook triggers to dispatch transaction data instantly between systems.",  icon: <MdLocalShipping size={18} /> },
-              { title: "Tailored UI",       desc: "Clean, minimal console design customized to fit boutique daily workflows.",           icon: <MdStyle size={18} />         },
-            ].map((item, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-60px" }}
-                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: i * 0.07 }}
-                className="group p-7 rounded-2xl border border-slate-100 bg-white hover:border-[#2B7FFF]/20 hover:shadow-lg hover:shadow-[#2B7FFF]/5 transition-all duration-300 relative overflow-hidden">
-
-                <div className="absolute top-0 inset-x-0 h-0.5 bg-[#2B7FFF] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-400" />
-
-                <div className="w-9 h-9 rounded-xl bg-[#EAF3FF] group-hover:bg-[#2B7FFF] flex items-center justify-center text-[#2B7FFF] group-hover:text-white transition-all duration-300 mb-6">
-                  {item.icon}
-                </div>
-                <h3 className="text-[11px] font-bold uppercase tracking-wider text-[#0F172A] mb-2">{item.title}</h3>
-                <p className="text-[11px] text-slate-500 leading-relaxed">{item.desc}</p>
-                <span className="absolute top-5 right-5 text-[9px] font-mono text-slate-200 group-hover:text-[#2B7FFF]/40 transition-colors">0{i + 1}</span>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Testimonials ────────────────────────────────────────────────────── */}
-      <section id="testimonials" className="py-28 bg-[#0F172A] overflow-hidden">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <p className="text-[9px] font-semibold tracking-[0.3em] uppercase text-[#2B7FFF] mb-12">Customer Testimonials</p>
-
-          <div className="min-h-[220px] flex flex-col justify-center">
-            <AnimatePresence mode="wait">
-              <motion.div key={currentTestimonial} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }} className="space-y-6">
-
-                {/* Star rating */}
-                <div className="flex items-center justify-center gap-0.5 text-amber-400">
-                  {[...Array(testimonials[currentTestimonial].rating || 5)].map((_, i) => (
-                    <MdStar key={i} size={14} />
-                  ))}
-                </div>
-
-                <blockquote className="font-['Playfair_Display',serif] text-xl md:text-2xl font-normal text-white/85 leading-relaxed italic max-w-2xl mx-auto">
-                  "{testimonials[currentTestimonial].quote}"
-                </blockquote>
-
-                <div className="flex flex-col items-center gap-2">
-                  <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10">
-                    <img src={testimonials[currentTestimonial].avatar} alt="" className="w-full h-full object-cover object-[50%_22%]" />
-                  </div>
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-white">{testimonials[currentTestimonial].author}</p>
-                  <p className="text-[9px] font-medium tracking-[0.2em] uppercase text-slate-500">
-                    {testimonials[currentTestimonial].role} · <span className="text-[#2B7FFF]">{testimonials[currentTestimonial].company}</span>
-                  </p>
-                </div>
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-          <div className="flex items-center justify-center gap-5 mt-12">
-            <button onClick={() => setCurrentTestimonial(p => (p - 1 + testimonials.length) % testimonials.length)}
-              className="w-9 h-9 rounded-full border border-white/15 text-white/50 hover:border-white/50 hover:text-white flex items-center justify-center transition-all cursor-pointer">
-              <MdArrowBackIos size={10} className="translate-x-[2px]" />
-            </button>
-            <div className="flex gap-2">
-              {testimonials.map((_, i) => (
-                <button key={i} onClick={() => setCurrentTestimonial(i)}
-                  className={`h-0.5 rounded-full transition-all duration-400 cursor-pointer ${currentTestimonial === i ? "bg-white w-6" : "bg-white/20 w-3"}`} />
-              ))}
-            </div>
-            <button onClick={() => setCurrentTestimonial(p => (p + 1) % testimonials.length)}
-              className="w-9 h-9 rounded-full border border-white/15 text-white/50 hover:border-white/50 hover:text-white flex items-center justify-center transition-all cursor-pointer">
-              <MdArrowForwardIos size={10} />
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* ── About ───────────────────────────────────────────────────────────── */}
-      <section id="about" className="py-36 bg-white border-y border-slate-100">
-        <div className="max-w-7xl mx-auto px-6 md:px-12">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-
-            {/* Story */}
-            <motion.div initial={{ opacity: 0, x: -16 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="lg:col-span-4 space-y-7">
-              <div>
-                <p className="text-[9px] font-semibold tracking-[0.3em] uppercase text-[#2B7FFF] mb-3">The Origin</p>
-                <h2 className="font-['Playfair_Display',serif] text-3xl md:text-4xl font-semibold text-[#0F172A] tracking-tight">About BUIQ</h2>
-                <div className="w-8 h-px bg-[#2B7FFF] mt-5" />
-              </div>
-              <p className="text-sm text-slate-500 leading-relaxed">
-                BUIQ was established in Jakarta as a response to the demand for refined, high-quality fashion silhouettes that translate seamlessly throughout your day. We remove unnecessary details to focus on raw garment construction, fabric resilience, and structural balance.
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
-                {[
-                  { t: "Vision",  d: "To serve as the primary fashion destination cultivating quiet confidence for the modern generation." },
-                  { t: "Mission", d: "To manufacture structured wardrobe items and accessories with strict quality and high utility design." },
-                ].map(v => (
-                  <div key={v.t}>
-                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-[#0F172A] mb-2">{v.t}</h4>
-                    <p className="text-[11px] text-slate-500 leading-relaxed">{v.d}</p>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* Image */}
-            <motion.div initial={{ opacity: 0, scale: 0.97 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
-              className="lg:col-span-3 aspect-[3/4] rounded-2xl overflow-hidden border border-slate-100 shadow-lg bg-slate-50">
-              <img src="/img/lifestyle_essentials.png" alt="BUIQ lifestyle" className="w-full h-full object-cover object-[50%_35%] hover:scale-105 transition-transform duration-[1.2s]" />
-            </motion.div>
-
-            {/* Values */}
-            <motion.div initial={{ opacity: 0, x: 16 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
-              className="lg:col-span-5 bg-[#0F172A] rounded-2xl p-10 md:p-12 text-white relative overflow-hidden">
-
-              <div className="absolute top-0 right-0 w-48 h-48 bg-[#2B7FFF]/5 rounded-full blur-3xl pointer-events-none" />
-
-              <p className="text-[8px] font-semibold tracking-[0.35em] uppercase text-slate-500 border-b border-slate-800 pb-3 mb-8 inline-block">Core Principles</p>
-              <h3 className="font-['Playfair_Display',serif] text-xl font-semibold text-white/90 mb-8">Standard of Curation</h3>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                {[
-                  { n: "01", t: "Quiet Aesthetics",  d: "No loud logos. Clean outlines, balanced proportions, and neutral hues." },
-                  { n: "02", t: "Refined Weaves",     d: "Selected cotton composites that preserve structure and feel over time." },
-                  { n: "03", t: "Everyday Utility",   d: "Clothing designed to shift from campus mornings to evening socials." },
-                  { n: "04", t: "Direct Distribution",d: "Garments go straight from production to boutique, guaranteeing value." },
-                ].map(v => (
-                  <div key={v.n} className="space-y-1.5">
-                    <p className="text-[9px] font-mono text-[#2B7FFF] font-semibold">{v.n} //</p>
-                    <h4 className="text-[11px] font-bold uppercase tracking-wider text-white/90">{v.t}</h4>
-                    <p className="text-[11px] text-slate-400 leading-relaxed">{v.d}</p>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Contact ─────────────────────────────────────────────────────────── */}
-      <section id="contact" className="py-36 bg-[#F8FAFC]">
-        <div className="max-w-7xl mx-auto px-6 md:px-12">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-20 items-start">
-
-            {/* Info */}
-            <div className="lg:col-span-5 space-y-10">
-              <div>
-                <p className="text-[9px] font-semibold tracking-[0.3em] uppercase text-[#2B7FFF] mb-3">Direct Channels</p>
-                <h2 className="font-['Playfair_Display',serif] text-3xl md:text-4xl font-semibold text-[#0F172A] tracking-tight">Get in touch</h2>
-              </div>
-
-              <div className="space-y-6 text-sm text-slate-500">
-                {[
-                  { title: "Jakarta Flagship", lines: ["BUIQ Flagship Building", "Jl. Fashion Avenue No. 42, Kebayoran Baru", "Jakarta Selatan 12160"] },
-                  { title: "Direct Support",   lines: ["Phone: +62 21 555 1234", "WhatsApp: +62 812 3456 7890"] },
-                  { title: "Digital",          lines: ["info@buiqstore.com", "orders@buiqstore.com"] },
-                ].map(s => (
-                  <div key={s.title}>
-                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-[#0F172A] mb-2">{s.title}</h4>
-                    {s.lines.map(l => <p key={l} className="text-xs leading-relaxed">{l}</p>)}
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex gap-3">
-                {[{ icon: <FaInstagram size={14} /> }, { icon: <FaTiktok size={13} /> }, { icon: <FaFacebook size={14} /> }].map((s, i) => (
-                  <a key={i} href="#" className="w-9 h-9 rounded-full border border-slate-200 bg-white flex items-center justify-center text-[#0F172A] hover:bg-[#0F172A] hover:text-white hover:border-[#0F172A] transition-all shadow-xs">
-                    {s.icon}
-                  </a>
-                ))}
-              </div>
-            </div>
-
-            {/* Form */}
-            <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-100 shadow-xl shadow-black/[0.05] p-8 md:p-12">
-              <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#0F172A] mb-8 pb-4 border-b border-slate-50">Send a message</h3>
-
-              {formSubmitted ? (
-                <div className="py-12 text-center space-y-3">
-                  <div className="w-12 h-12 rounded-full bg-[#EAF3FF] flex items-center justify-center mx-auto">
-                    <MdCheckCircle className="text-[#2B7FFF]" size={22} />
-                  </div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-[#0F172A]">Message dispatched</p>
-                  <p className="text-[10px] text-slate-400">We'll reply within 24 hours.</p>
-                </div>
-              ) : (
-                <form onSubmit={handleContactSubmit} className="space-y-5">
-                  {[
-                    { label: "Full Name",      key: "name",    type: "text",  placeholder: "Your name"  },
-                    { label: "Email Address",  key: "email",   type: "email", placeholder: "Your email" },
-                  ].map(f => (
-                    <div key={f.key}>
-                      <label className="text-[8px] font-bold uppercase tracking-[0.25em] text-[#2B7FFF] block mb-2">{f.label}</label>
-                      <input type={f.type} required placeholder={f.placeholder}
-                        value={contactForm[f.key]} onChange={e => setContactForm({ ...contactForm, [f.key]: e.target.value })}
-                        className="w-full px-4 py-3.5 text-xs border border-slate-150 rounded-xl bg-[#F8FAFC] focus:bg-white outline-none focus:border-[#2B7FFF] focus:ring-2 focus:ring-[#2B7FFF]/10 placeholder:text-slate-300 transition-all" />
-                    </div>
-                  ))}
-                  <div>
-                    <label className="text-[8px] font-bold uppercase tracking-[0.25em] text-[#2B7FFF] block mb-2">Message</label>
-                    <textarea required rows={4} placeholder="Type your message…"
-                      value={contactForm.message} onChange={e => setContactForm({ ...contactForm, message: e.target.value })}
-                      className="w-full px-4 py-3.5 text-xs border border-slate-150 rounded-xl bg-[#F8FAFC] focus:bg-white outline-none focus:border-[#2B7FFF] focus:ring-2 focus:ring-[#2B7FFF]/10 placeholder:text-slate-300 transition-all resize-none" />
-                  </div>
-                  <button type="submit"
-                    className="w-full bg-[#0F172A] hover:bg-[#2B7FFF] text-white text-[10px] font-semibold uppercase tracking-[0.18em] py-4 rounded-full transition-all duration-300 shadow-lg shadow-black/10 mt-2">
-                    Send Message
+                <div className="flex gap-3.5 border-t pt-4">
+                  <button
+                    onClick={() => {
+                      handleAddToCart(detailProduct);
+                      setDetailProduct(null);
+                    }}
+                    className="flex-1 border hover:bg-slate-50 text-slate-700 text-xs font-bold py-3.5 rounded-xl transition-all cursor-pointer text-center"
+                  >
+                    Add to Cart
                   </button>
-                </form>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-      {/* ── Secondary CTA Section ────────────────────────────────────────────── */}
-      <section className="py-24 bg-[#0B0F19] text-center relative overflow-hidden border-t border-slate-800">
-        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/20 via-transparent to-transparent pointer-events-none" />
-        <div className="relative z-10 max-w-4xl mx-auto px-6 space-y-8">
-          <h2 className="font-['Playfair_Display',serif] text-4xl md:text-5xl font-normal text-white leading-tight tracking-tight">
-            Ready to Grow Your Fashion Business?
-          </h2>
-          <p className="text-sm text-slate-400 max-w-xl mx-auto leading-relaxed font-light font-sans">
-            Join leading fashion brands managing customer connections, inventory turns, and online/offline checkout transactions with BUIQ CRM.
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
-            <Link to={isLoggedIn ? "/dashboard" : "/login"}
-              className="bg-[#2B7FFF] hover:bg-[#2B7FFF]/90 text-white text-[11px] font-semibold tracking-[0.12em] uppercase px-8 py-4 rounded-full transition-all duration-300 shadow-lg shadow-[#2B7FFF]/20">
-              {isLoggedIn ? "Access Dashboard" : "Launch CRM Portal"}
-            </Link>
-            <button onClick={() => scrollToSection("contact")}
-              className="border border-white/20 hover:border-white/50 text-white text-[11px] font-semibold tracking-[0.12em] uppercase px-8 py-4 rounded-full transition-all duration-300 backdrop-blur-sm cursor-pointer">
-              Contact Sales
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Footer ──────────────────────────────────────────────────────────── */}
-      <footer className="bg-[#0b0f19] text-slate-400 pt-24 pb-12 border-t border-slate-800/40">
-        <div className="max-w-7xl mx-auto px-6 md:px-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 pb-16 border-b border-slate-800/60">
-            
-            {/* Brand Col */}
-            <div className="space-y-6">
-              <span className="font-['Playfair_Display',serif] text-xl font-bold tracking-[0.2em] text-white">BUIQ</span>
-              <p className="text-[11.5px] leading-relaxed text-slate-500 font-light font-sans">
-                Sleek CRM and clienteling operations for modern fashion and lifestyle brands. Empowers boutiques to run efficiently.
-              </p>
-              <div className="flex gap-3 pt-2">
-                {[
-                  { icon: <FaInstagram size={14} />, url: "#" },
-                  { icon: <FaTiktok size={13} />, url: "#" },
-                  { icon: <FaFacebook size={14} />, url: "#" }
-                ].map((s, idx) => (
-                  <a key={idx} href={s.url} className="w-8 h-8 rounded-full border border-slate-800 bg-slate-900 flex items-center justify-center text-slate-400 hover:text-[#2B7FFF] hover:border-[#2B7FFF] transition-colors">
-                    {s.icon}
-                  </a>
-                ))}
-              </div>
-            </div>
-
-            {/* Product Links */}
-            <div className="space-y-5">
-              <h4 className="text-[9px] font-bold uppercase tracking-[0.25em] text-white">Product</h4>
-              <ul className="space-y-3 text-[11px] text-slate-500 font-light font-sans">
-                <li>
-                  <Link to={isLoggedIn ? "/dashboard" : "/login"} className="hover:text-white transition-colors">
-                    CRM Dashboard
-                  </Link>
-                </li>
-                <li>
-                  <Link to={isLoggedIn ? "/dashboard" : "/login"} className="hover:text-white transition-colors">
-                    Member Loyalty
-                  </Link>
-                </li>
-                <li>
-                  <Link to={isLoggedIn ? "/dashboard" : "/login"} className="hover:text-white transition-colors">
-                    Inventory Control
-                  </Link>
-                </li>
-                <li>
-                  <Link to={isLoggedIn ? "/dashboard" : "/login"} className="hover:text-white transition-colors">
-                    Order Analytics
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/components" className="hover:text-white transition-colors">
-                    UI Component Library
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            {/* Company Links */}
-            <div className="space-y-5">
-              <h4 className="text-[9px] font-bold uppercase tracking-[0.25em] text-white">Company</h4>
-              <ul className="space-y-3 text-[11px] text-slate-500 font-light font-sans">
-                <li>
-                  <button onClick={() => scrollToSection("about")} className="hover:text-white transition-colors text-left cursor-pointer">
-                    About Us
+                  <button
+                    onClick={() => {
+                      const p = detailProduct;
+                      setDetailProduct(null);
+                      handleAddToCart(p);
+                      handleOpenCheckout(p, 1);
+                    }}
+                    className="flex-1 bg-primary hover:bg-primary-hover text-white text-xs font-bold py-3.5 rounded-xl transition-all cursor-pointer text-center shadow-md shadow-primary/10"
+                  >
+                    Beli Sekarang
                   </button>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Careers
-                  </a>
-                </li>
-                <li>
-                  <Link to={isLoggedIn ? "/dashboard" : "/login"} className="hover:text-white transition-colors">
-                    Staff Portal
-                  </Link>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Privacy Policy
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Terms of Service
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {/* Contact Info */}
-            <div className="space-y-5">
-              <h4 className="text-[9px] font-bold uppercase tracking-[0.25em] text-white">Contact</h4>
-              <ul className="space-y-3.5 text-[11px] text-slate-500 font-light font-sans">
-                <li className="leading-relaxed">
-                  Jl. Fashion Avenue No. 42,<br />
-                  Kebayoran Baru, Jakarta, Indonesia
-                </li>
-                <li>
-                  support@buiqstore.com
-                </li>
-                <li>
-                  +62 21 555 1234
-                </li>
-              </ul>
-            </div>
-
-          </div>
-
-          {/* Bottom Bar */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-10 text-[9px] font-medium tracking-[0.2em] uppercase text-slate-600">
-            <p>© 2026 BUIQ Fashion & Lifestyle. All rights reserved.</p>
-            <div className="flex gap-6">
-              <a href="#" className="hover:text-slate-400 transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-slate-400 transition-colors">Terms of Service</a>
-            </div>
-          </div>
-
-        </div>
-      </footer>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

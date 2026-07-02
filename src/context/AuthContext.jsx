@@ -167,15 +167,19 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       if (user) {
-        await activityLogService.create({
-          user_id: user.id,
-          user_name: user.full_name,
-          user_role: user.role,
-          module: "User",
-          activity: "Logout",
-          description: `Pengguna ${user.full_name} (${user.email}) keluar dari sistem.`,
-          reference_id: user.id
-        });
+        try {
+          await activityLogService.create({
+            user_id: user.id,
+            user_name: user.full_name,
+            user_role: user.role,
+            module: "User",
+            activity: "Logout",
+            description: `Pengguna ${user.full_name} (${user.email}) keluar dari sistem.`,
+            reference_id: user.id
+          });
+        } catch (logErr) {
+          console.error("Failed to write logout activity log:", logErr);
+        }
       }
       await supabase.auth.signOut();
     } catch (err) {
