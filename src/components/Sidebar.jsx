@@ -13,6 +13,7 @@ import {
   MdInfo,
   MdCardMembership,
   MdPeople,
+  MdHistory,
 } from "react-icons/md";
 
 const menuItems = [
@@ -41,10 +42,16 @@ const menuItems = [
   {
     group: "SYSTEM",
     items: [
+      { icon: MdPeople, label: "User Management", path: "/user-management" },
+      { icon: MdHistory, label: "Activity Log", path: "/activity-log" },
+    ],
+  },
+  {
+    group: "ERROR PAGES",
+    items: [
       { icon: MdErrorOutline, label: "Error 400", path: "/error-400" },
       { icon: MdWarning, label: "Error 401", path: "/error-401" },
       { icon: MdErrorOutline, label: "Error 403", path: "/error-403" },
-      { icon: MdPeople, label: "User Management", path: "/user-management" },
     ],
   },
 ];

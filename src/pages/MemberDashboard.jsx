@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabaseClient";
+import { activityLogService } from "../services/activityLogService";
 import { getWishlist } from "../utils/crmSync";
 import {
   FaCrown,
@@ -694,9 +695,22 @@ export default function MemberDashboard() {
                           <div className="flex items-center justify-between pt-2 border-t border-slate-100/50 mt-1">
                             <span className="font-mono text-[10px] font-bold text-slate-500">Code: {v.code}</span>
                             <button
-                              onClick={() => {
+                              onClick={async () => {
                                 if (isClaimable) {
                                   setVoucherClaimed({ ...voucherClaimed, [v.id]: true });
+                                  try {
+                                    await activityLogService.create({
+                                      user_id: user?.id || null,
+                                      user_name: memberProfile?.full_name || user?.full_name || "Member",
+                                      user_role: "member",
+                                      module: "Membership",
+                                      activity: "Voucher berhasil ditukar",
+                                      description: `Member ${memberProfile?.full_name || user?.full_name || "User"} berhasil menukarkan voucher: ${v.title} (Code: ${v.code})`,
+                                      reference_id: v.id
+                                    });
+                                  } catch (err) {
+                                    console.error("Gagal mencatat log klaim voucher:", err);
+                                  }
                                 }
                               }}
                               disabled={claimed || !isClaimable}

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { activityLogService } from "../services/activityLogService";
 
 const AuthContext = createContext({
   user: null,
@@ -132,12 +133,50 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
       throw error;
     }
+
+    // Log login activity
+    try {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role, full_name")
+        .eq("id", data.user.id)
+        .single();
+        
+      const fullName = data.user.email === "admin@buiq.com" 
+        ? "Admin Utama" 
+        : (profile?.full_name || data.user.user_metadata?.full_name || data.user.email?.split("@")[0] || "User");
+      const role = data.user.email === "admin@buiq.com" ? "admin" : (profile?.role || "member");
+      
+      await activityLogService.create({
+        user_id: data.user.id,
+        user_name: fullName,
+        user_role: role,
+        module: "User",
+        activity: "Login",
+        description: `Pengguna ${fullName} (${data.user.email}) berhasil masuk ke dalam sistem.`,
+        reference_id: data.user.id
+      });
+    } catch (logErr) {
+      console.error("Failed to write login log:", logErr);
+    }
+
     return data;
   };
 
   const logout = async () => {
     setLoading(true);
     try {
+      if (user) {
+        await activityLogService.create({
+          user_id: user.id,
+          user_name: user.full_name,
+          user_role: user.role,
+          module: "User",
+          activity: "Logout",
+          description: `Pengguna ${user.full_name} (${user.email}) keluar dari sistem.`,
+          reference_id: user.id
+        });
+      }
       await supabase.auth.signOut();
     } catch (err) {
       console.error("Supabase signOut error:", err);

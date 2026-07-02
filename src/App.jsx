@@ -40,6 +40,10 @@ const UserManagement = React.lazy(() =>
   import("./pages/UserManagement")
 );
 
+const ActivityLog = React.lazy(() =>
+  import("./pages/ActivityLog")
+);
+
 const Login = React.lazy(() => import("./pages/auth/Login"));
 const Logout = React.lazy(() => import("./pages/auth/Logout"));
 const LandingPage = React.lazy(() => import("./pages/LandingPage"));
@@ -153,6 +157,11 @@ function App() {
             <Route
               path="/user-management"
               element={<UserManagement />}
+            />
+
+            <Route
+              path="/activity-log"
+              element={<ActivityLog />}
             />
 
             {/* ERROR PAGES */}
