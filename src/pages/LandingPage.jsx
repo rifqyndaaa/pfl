@@ -364,6 +364,7 @@ export default function LandingPage() {
       setToastMsg("");
     }, 3500);
   };
+  
 
   // add to cart
   const handleAddToCart = (product) => {
